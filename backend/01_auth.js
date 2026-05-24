@@ -7,6 +7,9 @@
 //  Routes:
 //    POST /auth/signup  — Create a new user
 //    POST /auth/login   — Login and get a token
+//
+//  Exported:
+//    authMiddleware — protect routes in other files
 // ============================================
 
 const express = require('express');
@@ -27,10 +30,16 @@ const userSchema = new mongoose.Schema({
 
 const User = mongoose.model('User', userSchema);
 
-// ── Auth Middleware ─────────────────────────
+// ──────────────────────────────────────────────
+//  AUTH MIDDLEWARE
+// ──────────────────────────────────────────────
 //  This function checks if the request has a valid JWT token.
 //  Other route files (like 02_customers.js) import and use this.
-
+//
+//  Usage in Postman (for protected routes):
+//    Header Key   : Authorization
+//    Header Value : Bearer <your_token_here>
+// ──────────────────────────────────────────────
 function authMiddleware(req, res, next) {
   // Get token from the Authorization header
   const authHeader = req.headers['authorization'];
@@ -51,7 +60,32 @@ function authMiddleware(req, res, next) {
   }
 }
 
-// ── POST /auth/signup ──────────────────────
+// ──────────────────────────────────────────────
+//  POST /auth/signup
+// ──────────────────────────────────────────────
+//  Creates a new user account and returns a JWT token.
+//
+//  Postman:
+//    Method : POST
+//    URL    : http://localhost:3000/auth/signup
+//    Headers: Content-Type: application/json
+//    Body   : (raw JSON)
+//      {
+//        "username": "john",
+//        "password": "secret123"
+//      }
+//
+//  Success Response (201):
+//      {
+//        "token": "eyJhbGciOi...",
+//        "username": "john"
+//      }
+//
+//  Error Responses:
+//    400 — "Username and password are required."
+//    400 — "Username already taken."
+//    500 — "Server error. Please try again."
+// ──────────────────────────────────────────────
 router.post('/signup', async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -85,7 +119,32 @@ router.post('/signup', async (req, res) => {
   }
 });
 
-// ── POST /auth/login ───────────────────────
+// ──────────────────────────────────────────────
+//  POST /auth/login
+// ──────────────────────────────────────────────
+//  Logs in an existing user and returns a JWT token.
+//
+//  Postman:
+//    Method : POST
+//    URL    : http://localhost:3000/auth/login
+//    Headers: Content-Type: application/json
+//    Body   : (raw JSON)
+//      {
+//        "username": "john",
+//        "password": "secret123"
+//      }
+//
+//  Success Response (200):
+//      {
+//        "token": "eyJhbGciOi...",
+//        "username": "john"
+//      }
+//
+//  Error Responses:
+//    400 — "Username and password are required."
+//    400 — "Invalid username or password."
+//    500 — "Server error. Please try again."
+// ──────────────────────────────────────────────
 router.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;

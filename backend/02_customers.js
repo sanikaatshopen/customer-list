@@ -10,6 +10,9 @@
 //    POST   /customers       — Add a new customer
 //    PUT    /customers/:id   — Update your customer
 //    DELETE /customers/:id   — Delete your customer
+//
+//  ⚠️  All routes require the Authorization header:
+//       Authorization: Bearer <your_token>
 // ============================================
 
 const express = require('express');
@@ -41,8 +44,36 @@ const Customer = mongoose.model('Customer', customerSchema);
 // ── All routes below require authentication ──
 router.use(authMiddleware);
 
-// ── GET /customers ─────────────────────────
+// ──────────────────────────────────────────────
+//  GET /customers
+// ──────────────────────────────────────────────
 //  Returns only the customers created by the logged-in user.
+//  Results are sorted by newest first.
+//
+//  Postman:
+//    Method : GET
+//    URL    : http://localhost:3000/customers
+//    Headers:
+//      Authorization : Bearer <your_token>
+//    Body   : none
+//
+//  Success Response (200):
+//    [
+//      {
+//        "_id": "665abc...",
+//        "name": "John Doe",
+//        "email": "john@example.com",
+//        "phone": "+91 9876543210",
+//        "createdBy": "664def...",
+//        "createdAt": "2026-05-24T10:30:00.000Z",
+//        "updatedAt": "2026-05-24T10:30:00.000Z"
+//      }
+//    ]
+//
+//  Error Responses:
+//    401 — "No token provided. Please login."
+//    500 — "Failed to fetch customers."
+// ──────────────────────────────────────────────
 router.get('/', async (req, res) => {
   try {
     const customers = await Customer.find({ createdBy: req.userId }).sort({
@@ -54,8 +85,42 @@ router.get('/', async (req, res) => {
   }
 });
 
-// ── POST /customers ────────────────────────
-//  Create a new customer.
+// ──────────────────────────────────────────────
+//  POST /customers
+// ──────────────────────────────────────────────
+//  Creates a new customer linked to the logged-in user.
+//
+//  Postman:
+//    Method : POST
+//    URL    : http://localhost:3000/customers
+//    Headers:
+//      Content-Type  : application/json
+//      Authorization : Bearer <your_token>
+//    Body   : (raw JSON)
+//      {
+//        "name": "John Doe",
+//        "email": "john@example.com",
+//        "phone": "+91 9876543210"
+//      }
+//
+//  Note: Only "name" is required. "email" and "phone" are optional.
+//
+//  Success Response (201):
+//      {
+//        "_id": "665abc...",
+//        "name": "John Doe",
+//        "email": "john@example.com",
+//        "phone": "+91 9876543210",
+//        "createdBy": "664def...",
+//        "createdAt": "...",
+//        "updatedAt": "..."
+//      }
+//
+//  Error Responses:
+//    400 — "Customer name is required."
+//    401 — "No token provided. Please login."
+//    500 — "Failed to create customer."
+// ──────────────────────────────────────────────
 router.post('/', async (req, res) => {
   try {
     const { name, email, phone } = req.body;
@@ -78,8 +143,41 @@ router.post('/', async (req, res) => {
   }
 });
 
-// ── PUT /customers/:id ─────────────────────
-//  Update a customer. Only the owner can update.
+// ──────────────────────────────────────────────
+//  PUT /customers/:id
+// ──────────────────────────────────────────────
+//  Updates a customer. Only the owner can update.
+//  Ownership is verified in the query itself.
+//
+//  Postman:
+//    Method : PUT
+//    URL    : http://localhost:3000/customers/665abc123def456
+//    Headers:
+//      Content-Type  : application/json
+//      Authorization : Bearer <your_token>
+//    Body   : (raw JSON)
+//      {
+//        "name": "Jane Doe",
+//        "email": "jane@example.com",
+//        "phone": "+91 1234567890"
+//      }
+//
+//  Success Response (200):
+//      {
+//        "_id": "665abc...",
+//        "name": "Jane Doe",
+//        "email": "jane@example.com",
+//        "phone": "+91 1234567890",
+//        "createdBy": "664def...",
+//        "createdAt": "...",
+//        "updatedAt": "..."
+//      }
+//
+//  Error Responses:
+//    401 — "No token provided. Please login."
+//    404 — "Customer not found or not yours."
+//    500 — "Failed to update customer."
+// ──────────────────────────────────────────────
 router.put('/:id', async (req, res) => {
   try {
     const { name, email, phone } = req.body;
@@ -103,8 +201,29 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// ── DELETE /customers/:id ──────────────────
-//  Delete a customer. Only the owner can delete.
+// ──────────────────────────────────────────────
+//  DELETE /customers/:id
+// ──────────────────────────────────────────────
+//  Deletes a customer. Only the owner can delete.
+//  Ownership is verified in the query itself.
+//
+//  Postman:
+//    Method : DELETE
+//    URL    : http://localhost:3000/customers/665abc123def456
+//    Headers:
+//      Authorization : Bearer <your_token>
+//    Body   : none
+//
+//  Success Response (200):
+//      {
+//        "message": "Customer deleted successfully."
+//      }
+//
+//  Error Responses:
+//    401 — "No token provided. Please login."
+//    404 — "Customer not found or not yours."
+//    500 — "Failed to delete customer."
+// ──────────────────────────────────────────────
 router.delete('/:id', async (req, res) => {
   try {
     // Find the customer AND check ownership in one query

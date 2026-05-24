@@ -8,7 +8,14 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const dns = require('dns');
 require('dotenv').config();
+
+// ── Fix MongoDB Atlas DNS issue ────────────
+//  Some ISPs/networks block SRV record lookups.
+//  Using Google & Cloudflare DNS servers fixes this.
+dns.setServers(['8.8.8.8', '1.1.1.1']);
+dns.setDefaultResultOrder('ipv4first');
 
 const app = express();
 

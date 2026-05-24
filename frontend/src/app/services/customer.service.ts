@@ -9,6 +9,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { AuthService } from './auth.service';
+import { environment } from '../../environments/environment';
 
 // Customer interface — matches the backend model
 export interface Customer {
@@ -22,7 +23,7 @@ export interface Customer {
 
 @Injectable({ providedIn: 'root' })
 export class CustomerService {
-  private API_URL = 'http://localhost:3000/customers';
+  private API_URL = `${environment.apiUrl}/customers`;
 
   constructor(private http: HttpClient, private auth: AuthService) {}
 

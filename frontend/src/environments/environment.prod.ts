@@ -1,5 +1,5 @@
 // Production environment
 export const environment = {
   production: true,
-  apiUrl: 'https://api.example.com',
+  apiUrl: 'https://shop-customer-base.onrender.com',
 };

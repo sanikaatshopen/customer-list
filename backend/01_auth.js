@@ -24,7 +24,7 @@ const router = express.Router();
 //  A student can move it to a separate models/ folder later.
 
 const userSchema = new mongoose.Schema({
-  username: { type: String, required: true, unique: true, trim: true },
+  username: { type: String, required: true, unique: true, trim: true, lowercase: true },
   password: { type: String, required: true },
 });
 
@@ -95,8 +95,15 @@ router.post('/signup', async (req, res) => {
       return res.status(400).json({ message: 'Username and password are required.' });
     }
 
+    const lowercaseUsername = username.toLowerCase().trim();
+
+    // Check password length limit
+    if (password.length < 8) {
+      return res.status(400).json({ message: 'Password must be at least 8 characters long.' });
+    }
+
     // Check if user already exists
-    const existingUser = await User.findOne({ username });
+    const existingUser = await User.findOne({ username: lowercaseUsername });
     if (existingUser) {
       return res.status(400).json({ message: 'Username already taken.' });
     }
@@ -105,7 +112,7 @@ router.post('/signup', async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create the user
-    const user = new User({ username, password: hashedPassword });
+    const user = new User({ username: lowercaseUsername, password: hashedPassword });
     await user.save();
 
     // Create a JWT token
@@ -154,8 +161,10 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ message: 'Username and password are required.' });
     }
 
+    const lowercaseUsername = username.toLowerCase().trim();
+
     // Find the user
-    const user = await User.findOne({ username });
+    const user = await User.findOne({ username: lowercaseUsername });
     if (!user) {
       return res.status(400).json({ message: 'Invalid username or password.' });
     }

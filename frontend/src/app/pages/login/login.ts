@@ -45,11 +45,20 @@ export class LoginComponent {
   // ── Submit Form ────────────────────────
   onSubmit(): void {
     this.errorMessage = '';
+
+    const cleanUsername = this.username.trim().toLowerCase();
+
+    // Enforce 8-character limit on signup
+    if (this.isSignup && this.password.length < 8) {
+      this.errorMessage = 'Password must be at least 8 characters long.';
+      return;
+    }
+
     this.loading = true;
 
     const action = this.isSignup
-      ? this.auth.signup(this.username, this.password)
-      : this.auth.login(this.username, this.password);
+      ? this.auth.signup(cleanUsername, this.password)
+      : this.auth.login(cleanUsername, this.password);
 
     action.subscribe({
       next: () => {

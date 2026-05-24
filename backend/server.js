@@ -14,7 +14,11 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const dns = require('dns');
 require('dotenv').config();
+
+// Use Google DNS for resolution to bypass local DNS issues on Windows
+dns.setServers(['8.8.8.8', '8.8.4.4']);
 
 const app = express();
 

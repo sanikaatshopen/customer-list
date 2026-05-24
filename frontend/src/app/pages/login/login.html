@@ -1,0 +1,77 @@
+<!-- ============================================ -->
+<!--  Login / Signup Page                         -->
+<!-- ============================================ -->
+
+<div class="login-wrapper d-flex align-items-center justify-content-center min-vh-100 bg-light">
+  <div class="card shadow-sm" style="width: 100%; max-width: 420px;">
+    <div class="card-body p-4">
+
+      <!-- Title -->
+      <h3 class="card-title text-center mb-4">
+        {{ isSignup ? '📝 Create Account' : '🔐 Login' }}
+      </h3>
+
+      <!-- Error Message -->
+      @if (errorMessage) {
+        <div class="alert alert-danger py-2" role="alert">
+          {{ errorMessage }}
+        </div>
+      }
+
+      <!-- Form -->
+      <form (ngSubmit)="onSubmit()">
+
+        <!-- Username -->
+        <div class="mb-3">
+          <label for="username" class="form-label">Username</label>
+          <input
+            type="text"
+            class="form-control"
+            id="username"
+            placeholder="Enter username"
+            [(ngModel)]="username"
+            name="username"
+            required
+          />
+        </div>
+
+        <!-- Password -->
+        <div class="mb-3">
+          <label for="password" class="form-label">Password</label>
+          <input
+            type="password"
+            class="form-control"
+            id="password"
+            placeholder="Enter password"
+            [(ngModel)]="password"
+            name="password"
+            required
+          />
+        </div>
+
+        <!-- Submit Button -->
+        <button
+          type="submit"
+          class="btn btn-primary w-100"
+          [disabled]="loading || !username || !password"
+        >
+          @if (loading) {
+            <span class="spinner-border spinner-border-sm me-2"></span>
+          }
+          {{ isSignup ? 'Sign Up' : 'Login' }}
+        </button>
+      </form>
+
+      <!-- Toggle Link -->
+      <div class="text-center mt-3">
+        <small class="text-muted">
+          {{ isSignup ? 'Already have an account?' : "Don't have an account?" }}
+          <a href="javascript:void(0)" (click)="toggleMode()" class="text-decoration-none">
+            {{ isSignup ? 'Login' : 'Sign Up' }}
+          </a>
+        </small>
+      </div>
+
+    </div>
+  </div>
+</div>

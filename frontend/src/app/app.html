@@ -1,0 +1,24 @@
+<!-- ============================================ -->
+<!--  Root Component — Navbar + Router Outlet     -->
+<!-- ============================================ -->
+
+<!-- Navbar (shown only when logged in) -->
+@if (auth.isLoggedIn()) {
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+      <a class="navbar-brand" routerLink="/customers">📋 Customer List</a>
+
+      <div class="ms-auto d-flex align-items-center">
+        <span class="text-light me-3">
+          Hello, <strong>{{ auth.getUsername() }}</strong>
+        </span>
+        <button class="btn btn-outline-light btn-sm" (click)="logout()">
+          Logout
+        </button>
+      </div>
+    </div>
+  </nav>
+}
+
+<!-- Page Content -->
+<router-outlet />

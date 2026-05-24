@@ -1,0 +1,246 @@
+<!-- ============================================ -->
+<!--  Customers Page                              -->
+<!--  Left: Add form  |  Right: Customer list     -->
+<!-- ============================================ -->
+
+<div class="container py-4">
+  <h2 class="mb-4">👥 My Customers</h2>
+
+  <div class="row">
+    <!-- ════════════════════════════════════════ -->
+    <!--  LEFT SIDE — Add Customer Form           -->
+    <!-- ════════════════════════════════════════ -->
+    <div class="col-md-4 mb-4">
+      <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">➕ Add Customer</h5>
+        </div>
+        <div class="card-body">
+
+          <!-- Success message -->
+          @if (addSuccess) {
+            <div class="alert alert-success py-2">{{ addSuccess }}</div>
+          }
+
+          <!-- Error message -->
+          @if (addError) {
+            <div class="alert alert-danger py-2">{{ addError }}</div>
+          }
+
+          <form (ngSubmit)="onAdd()">
+            <!-- Name -->
+            <div class="mb-3">
+              <label for="newName" class="form-label">Name *</label>
+              <input
+                type="text"
+                class="form-control"
+                id="newName"
+                placeholder="e.g. John Doe"
+                [(ngModel)]="newName"
+                name="newName"
+                required
+              />
+            </div>
+
+            <!-- Email -->
+            <div class="mb-3">
+              <label for="newEmail" class="form-label">Email</label>
+              <input
+                type="email"
+                class="form-control"
+                id="newEmail"
+                placeholder="e.g. john@example.com"
+                [(ngModel)]="newEmail"
+                name="newEmail"
+              />
+            </div>
+
+            <!-- Phone -->
+            <div class="mb-3">
+              <label for="newPhone" class="form-label">Phone</label>
+              <input
+                type="text"
+                class="form-control"
+                id="newPhone"
+                placeholder="e.g. +91 9876543210"
+                [(ngModel)]="newPhone"
+                name="newPhone"
+              />
+            </div>
+
+            <!-- Submit -->
+            <button
+              type="submit"
+              class="btn btn-primary w-100"
+              [disabled]="addLoading || !newName.trim()"
+            >
+              @if (addLoading) {
+                <span class="spinner-border spinner-border-sm me-2"></span>
+              }
+              Add Customer
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════ -->
+    <!--  RIGHT SIDE — Customer List              -->
+    <!-- ════════════════════════════════════════ -->
+    <div class="col-md-8">
+      <!-- Loading -->
+      @if (loading) {
+        <div class="text-center py-5">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          <p class="mt-2 text-muted">Loading customers...</p>
+        </div>
+      }
+
+      <!-- Empty state -->
+      @if (!loading && customers.length === 0) {
+        <div class="text-center py-5">
+          <h4 class="text-muted">No customers yet</h4>
+          <p class="text-muted">Use the form on the left to add your first customer!</p>
+        </div>
+      }
+
+      <!-- Customer Table -->
+      @if (!loading && customers.length > 0) {
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>#</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th class="text-end">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (customer of customers; track customer._id; let i = $index) {
+                <tr>
+                  <td>{{ i + 1 }}</td>
+                  <td class="fw-semibold">{{ customer.name }}</td>
+                  <td>{{ customer.email || '—' }}</td>
+                  <td>{{ customer.phone || '—' }}</td>
+                  <td class="text-end">
+                    <button
+                      class="btn btn-sm btn-outline-primary me-1"
+                      (click)="openEdit(customer)"
+                      title="Edit"
+                    >
+                      ✏️ Edit
+                    </button>
+                    <button
+                      class="btn btn-sm btn-outline-danger"
+                      (click)="openDelete(customer)"
+                      title="Delete"
+                    >
+                      🗑️ Delete
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!--  EDIT MODAL (Bootstrap modal via CSS)        -->
+<!-- ════════════════════════════════════════════ -->
+@if (editCustomer) {
+  <div class="modal-backdrop show" (click)="closeEdit()"></div>
+  <div class="modal d-block" tabindex="-1" (click)="closeEdit()">
+    <div class="modal-dialog" (click)="$event.stopPropagation()">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">✏️ Edit Customer</h5>
+          <button type="button" class="btn-close" (click)="closeEdit()"></button>
+        </div>
+        <div class="modal-body">
+          @if (editError) {
+            <div class="alert alert-danger py-2">{{ editError }}</div>
+          }
+
+          <div class="mb-3">
+            <label for="editName" class="form-label">Name *</label>
+            <input
+              type="text"
+              class="form-control"
+              id="editName"
+              [(ngModel)]="editName"
+            />
+          </div>
+          <div class="mb-3">
+            <label for="editEmail" class="form-label">Email</label>
+            <input
+              type="email"
+              class="form-control"
+              id="editEmail"
+              [(ngModel)]="editEmail"
+            />
+          </div>
+          <div class="mb-3">
+            <label for="editPhone" class="form-label">Phone</label>
+            <input
+              type="text"
+              class="form-control"
+              id="editPhone"
+              [(ngModel)]="editPhone"
+            />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="closeEdit()">Cancel</button>
+          <button
+            class="btn btn-primary"
+            (click)="onSaveEdit()"
+            [disabled]="editLoading || !editName.trim()"
+          >
+            @if (editLoading) {
+              <span class="spinner-border spinner-border-sm me-2"></span>
+            }
+            Save Changes
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ════════════════════════════════════════════ -->
+<!--  DELETE CONFIRMATION MODAL                   -->
+<!-- ════════════════════════════════════════════ -->
+@if (deleteTarget) {
+  <div class="modal-backdrop show" (click)="cancelDelete()"></div>
+  <div class="modal d-block" tabindex="-1" (click)="cancelDelete()">
+    <div class="modal-dialog modal-sm" (click)="$event.stopPropagation()">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">⚠️ Delete Customer</h5>
+          <button type="button" class="btn-close" (click)="cancelDelete()"></button>
+        </div>
+        <div class="modal-body">
+          <p>
+            Are you sure you want to delete
+            <strong>{{ deleteTarget.name }}</strong>?
+          </p>
+          <p class="text-muted small">This action cannot be undone.</p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="cancelDelete()">Cancel</button>
+          <button class="btn btn-danger" (click)="confirmDelete()">
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}

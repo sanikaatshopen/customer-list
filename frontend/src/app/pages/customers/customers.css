@@ -1,0 +1,6 @@
+/* Customers page — minimal extras beyond Bootstrap */
+
+/* Make modal backdrop slightly darker */
+.modal-backdrop.show {
+  opacity: 0.5;
+}

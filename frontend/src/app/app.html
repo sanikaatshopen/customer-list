@@ -6,14 +6,14 @@
 @if (auth.isLoggedIn()) {
   <nav class="navbar navbar-expand-lg navbar-dark bg-primary-theme shadow-sm mb-4">
     <div class="container">
-      <a class="navbar-brand fw-bold" routerLink="/customers">
-        <i class="bi bi-person-lines-fill me-2"></i>Customer List
-      </a>
-
-      <!-- Hamburger menu for mobile to open Offcanvas -->
-      <button class="navbar-toggler d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#userSidebar" aria-controls="userSidebar">
+      <!-- Hamburger menu for mobile to open Offcanvas (Left) -->
+      <button class="navbar-toggler d-lg-none me-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#userSidebar" aria-controls="userSidebar">
         <span class="navbar-toggler-icon"></span>
       </button>
+
+      <a class="navbar-brand fw-bold me-auto" routerLink="/customers">
+        <i class="bi bi-person-lines-fill me-2"></i>Customer List
+      </a>
 
       <!-- Desktop user controls (hidden on small screens) -->
       <div class="ms-auto d-none d-lg-flex align-items-center">
@@ -28,7 +28,7 @@
   </nav>
 
   <!-- Mobile Offcanvas Sidebar -->
-  <div class="offcanvas offcanvas-end d-lg-none" tabindex="-1" id="userSidebar" aria-labelledby="userSidebarLabel">
+  <div class="offcanvas offcanvas-start d-lg-none" style="max-width: 280px;" tabindex="-1" id="userSidebar" aria-labelledby="userSidebarLabel">
     <div class="offcanvas-header bg-primary-theme text-white">
       <h5 class="offcanvas-title fw-bold" id="userSidebarLabel"><i class="bi bi-list me-2"></i>Menu</h5>
       <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
@@ -37,7 +37,7 @@
       <div class="mb-4">
         <p class="text-muted mb-1">Logged in as:</p>
         <h5 class="fw-bold mb-0 text-dark">{{ auth.getFullname() | titlecase }}</h5>
-        <small class="text-muted username-smallcaps">{{ auth.getUsername() }}</small>
+        <small class="text-muted text-lowercase">@{{ auth.getUsername() | lowercase }}</small>
       </div>
       <div class="mt-auto">
         <button class="btn btn-outline-danger w-100 fw-semibold" (click)="logout()" data-bs-dismiss="offcanvas">

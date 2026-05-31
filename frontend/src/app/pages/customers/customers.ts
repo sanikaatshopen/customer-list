@@ -210,14 +210,10 @@ export class CustomersComponent implements OnInit {
     const cleanValue = input.value.replace(/[^0-9]/g, '');
     if (mode === 'new') {
       this.newPhone = cleanValue;
-      if (this.newPhoneError) {
-        this.validatePhone('new');
-      }
+      this.validatePhone('new');
     } else {
       this.editPhone = cleanValue;
-      if (this.editPhoneError) {
-        this.validatePhone('edit');
-      }
+      this.validatePhone('edit');
     }
   }
 
@@ -225,7 +221,9 @@ export class CustomersComponent implements OnInit {
   validateEmail(mode: 'new' | 'edit'): void {
     const emailVal = mode === 'new' ? this.newEmail.trim() : this.editEmail.trim();
     let error = '';
-    if (emailVal && !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(emailVal)) {
+    if (!emailVal) {
+      error = 'Email is required.';
+    } else if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(emailVal)) {
       error = 'Please enter a valid email address.';
     }
     if (mode === 'new') {
@@ -239,7 +237,9 @@ export class CustomersComponent implements OnInit {
   validatePhone(mode: 'new' | 'edit'): void {
     const phoneVal = mode === 'new' ? this.newPhone.trim() : this.editPhone.trim();
     let error = '';
-    if (phoneVal && !/^\d{10}$/.test(phoneVal)) {
+    if (!phoneVal) {
+      error = 'Phone number is required.';
+    } else if (!/^\d{10}$/.test(phoneVal)) {
       error = 'Phone number must be exactly 10 digits.';
     }
     if (mode === 'new') {

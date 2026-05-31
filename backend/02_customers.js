@@ -129,6 +129,14 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ message: 'Customer name is required.' });
     }
 
+    if (phone && !/^\d{10}$/.test(phone.trim())) {
+      return res.status(400).json({ message: 'Phone number must be exactly 10 digits.' });
+    }
+
+    if (email && !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email.trim())) {
+      return res.status(400).json({ message: 'Please enter a valid email address.' });
+    }
+
     const customer = new Customer({
       name,
       email: email || '',
@@ -181,6 +189,14 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { name, email, phone } = req.body;
+
+    if (phone && !/^\d{10}$/.test(phone.trim())) {
+      return res.status(400).json({ message: 'Phone number must be exactly 10 digits.' });
+    }
+
+    if (email && !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email.trim())) {
+      return res.status(400).json({ message: 'Please enter a valid email address.' });
+    }
 
     // Find the customer AND check ownership in one query
     const customer = await Customer.findOneAndUpdate(

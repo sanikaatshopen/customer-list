@@ -18,11 +18,12 @@ export class AuthService {
   constructor(private http: HttpClient, private router: Router) {}
 
   // ── Signup ─────────────────────────────
-  signup(username: string, password: string): Observable<any> {
-    return this.http.post(`${this.API_URL}/signup`, { username, password }).pipe(
+  signup(fullname: string, username: string, dob: string, password: string): Observable<any> {
+    return this.http.post(`${this.API_URL}/signup`, { fullname, username, dob, password }).pipe(
       tap((res: any) => {
         localStorage.setItem('token', res.token);
         localStorage.setItem('username', res.username);
+        localStorage.setItem('fullname', res.fullname);
       })
     );
   }
@@ -33,6 +34,7 @@ export class AuthService {
       tap((res: any) => {
         localStorage.setItem('token', res.token);
         localStorage.setItem('username', res.username);
+        localStorage.setItem('fullname', res.fullname);
       })
     );
   }
@@ -41,6 +43,7 @@ export class AuthService {
   logout(): void {
     localStorage.removeItem('token');
     localStorage.removeItem('username');
+    localStorage.removeItem('fullname');
     this.router.navigate(['/login']);
   }
 
@@ -51,6 +54,10 @@ export class AuthService {
 
   getUsername(): string | null {
     return localStorage.getItem('username');
+  }
+
+  getFullname(): string | null {
+    return localStorage.getItem('fullname');
   }
 
   isLoggedIn(): boolean {

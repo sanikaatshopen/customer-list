@@ -10,8 +10,7 @@
 
       <div class="ms-auto d-flex align-items-center">
         <span class="text-light me-3">
-          Hello, <strong>{{ auth.getUsername() }}</strong>
-        </span>
+          Hello, <strong class="text-white">{{ auth.getFullname() | titlecase }}</strong>        </span>
         <button class="btn btn-outline-light btn-sm" (click)="logout()">
           Logout
         </button>

@@ -24,7 +24,9 @@ const router = express.Router();
 //  A student can move it to a separate models/ folder later.
 
 const userSchema = new mongoose.Schema({
+  fullname: { type: String, required: true, trim: true },
   username: { type: String, required: true, unique: true, trim: true, lowercase: true },
+  dob: { type: String, required: true },
   password: { type: String, required: true },
 });
 
@@ -88,31 +90,61 @@ function authMiddleware(req, res, next) {
 // ──────────────────────────────────────────────
 router.post('/signup', async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { fullname, username, dob, password } = req.body;
 
     // Check if fields are provided
-    if (!username || !password) {
-      return res.status(400).json({ message: 'Username and password are required.' });
+    if (!fullname || !username || !dob || !password) {
+      return res.status(400).json({ message: 'All fields are required.' });
     }
 
-    const lowercaseUsername = username.toLowerCase().trim();
+    const trimmedFullname = fullname.trim();
+    if (trimmedFullname.length < 3) {
+      return res.status(400).json({ message: 'Fullname must be at least 3 characters long.' });
+    }
 
-    // Check password length limit
+    const trimmedUsername = username.trim().toLowerCase();
+    if (trimmedUsername.length < 3) {
+      return res.status(400).json({ message: 'Username must be at least 3 characters long.' });
+    }
+
+    if (!/^[a-z0-9]+$/.test(trimmedUsername)) {
+      return res.status(400).json({ message: 'Username must contain only lowercase letters and numbers.' });
+    }
+
+    // Check password length and complexity
     if (password.length < 8) {
       return res.status(400).json({ message: 'Password must be at least 8 characters long.' });
     }
+    if (!/[a-zA-Z]/.test(password) || !/[0-9]/.test(password)) {
+      return res.status(400).json({ message: 'Password must contain at least 1 letter and 1 number.' });
+    }
 
     // Check if user already exists
-    const existingUser = await User.findOne({ username: lowercaseUsername });
+    const existingUser = await User.findOne({ username: trimmedUsername });
     if (existingUser) {
       return res.status(400).json({ message: 'Username already taken.' });
     }
+
+    // Convert fullname to Title Case
+    const toTitleCase = (str) => {
+      return str
+        .toLowerCase()
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+    };
+    const titleCaseFullname = toTitleCase(trimmedFullname);
 
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create the user
-    const user = new User({ username: lowercaseUsername, password: hashedPassword });
+    const user = new User({
+      fullname: titleCaseFullname,
+      username: trimmedUsername,
+      dob: dob.trim(),
+      password: hashedPassword
+    });
     await user.save();
 
     // Create a JWT token
@@ -120,7 +152,7 @@ router.post('/signup', async (req, res) => {
       expiresIn: '7d',
     });
 
-    res.status(201).json({ token, username: user.username });
+    res.status(201).json({ token, username: user.username, fullname: user.fullname });
   } catch (err) {
     res.status(500).json({ message: 'Server error. Please try again.' });
   }
@@ -180,7 +212,7 @@ router.post('/login', async (req, res) => {
       expiresIn: '7d',
     });
 
-    res.json({ token, username: user.username });
+    res.json({ token, username: user.username, fullname: user.fullname });
   } catch (err) {
     res.status(500).json({ message: 'Server error. Please try again.' });
   }

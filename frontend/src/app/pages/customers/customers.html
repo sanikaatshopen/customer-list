@@ -44,7 +44,7 @@
 
             <!-- Email -->
             <div class="mb-3">
-              <label for="newEmail" class="form-label">Email</label>
+              <label for="newEmail" class="form-label">Email *</label>
               <input
                 type="email"
                 class="form-control"
@@ -54,7 +54,7 @@
                 [(ngModel)]="newEmail"
                 name="newEmail"
                 (blur)="validateEmail('new')"
-                (input)="newEmailError ? validateEmail('new') : null"
+                (input)="validateEmail('new')"
               />
               @if (newEmailError) {
                 <div class="invalid-feedback">{{ newEmailError }}</div>
@@ -63,7 +63,7 @@
 
             <!-- Phone -->
             <div class="mb-3">
-              <label for="newPhone" class="form-label">Phone (10 digits)</label>
+              <label for="newPhone" class="form-label">Phone (10 digits) *</label>
               <input
                 type="text"
                 class="form-control"
@@ -85,7 +85,7 @@
             <button
               type="submit"
               class="btn btn-primary w-100"
-              [disabled]="addLoading || !newName.trim()"
+              [disabled]="addLoading || !newName.trim() || !newEmail.trim() || !newPhone.trim() || newEmailError || newPhoneError"
             >
               @if (addLoading) {
                 <span class="spinner-border spinner-border-sm me-2"></span>
@@ -192,7 +192,7 @@
             />
           </div>
           <div class="mb-3">
-            <label for="editEmail" class="form-label">Email</label>
+            <label for="editEmail" class="form-label">Email *</label>
             <input
               type="email"
               class="form-control"
@@ -200,14 +200,14 @@
               id="editEmail"
               [(ngModel)]="editEmail"
               (blur)="validateEmail('edit')"
-              (input)="editEmailError ? validateEmail('edit') : null"
+              (input)="validateEmail('edit')"
             />
             @if (editEmailError) {
               <div class="invalid-feedback">{{ editEmailError }}</div>
             }
           </div>
           <div class="mb-3">
-            <label for="editPhone" class="form-label">Phone (10 digits)</label>
+            <label for="editPhone" class="form-label">Phone (10 digits) *</label>
             <input
               type="text"
               class="form-control"
@@ -228,7 +228,7 @@
           <button
             class="btn btn-primary"
             (click)="onSaveEdit()"
-            [disabled]="editLoading || !editName.trim()"
+            [disabled]="editLoading || !editName.trim() || !editEmail.trim() || !editPhone.trim() || editEmailError || editPhoneError"
           >
             @if (editLoading) {
               <span class="spinner-border spinner-border-sm me-2"></span>

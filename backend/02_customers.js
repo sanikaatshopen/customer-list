@@ -129,11 +129,19 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ message: 'Customer name is required.' });
     }
 
-    if (phone && !/^\d{10}$/.test(phone.trim())) {
+    if (!email || !email.trim()) {
+      return res.status(400).json({ message: 'Customer email is required.' });
+    }
+
+    if (!phone || !phone.trim()) {
+      return res.status(400).json({ message: 'Customer phone number is required.' });
+    }
+
+    if (!/^\d{10}$/.test(phone.trim())) {
       return res.status(400).json({ message: 'Phone number must be exactly 10 digits.' });
     }
 
-    if (email && !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email.trim())) {
+    if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email.trim())) {
       return res.status(400).json({ message: 'Please enter a valid email address.' });
     }
 
@@ -190,11 +198,19 @@ router.put('/:id', async (req, res) => {
   try {
     const { name, email, phone } = req.body;
 
-    if (phone && !/^\d{10}$/.test(phone.trim())) {
+    if (!email || !email.trim()) {
+      return res.status(400).json({ message: 'Customer email is required.' });
+    }
+
+    if (!phone || !phone.trim()) {
+      return res.status(400).json({ message: 'Customer phone number is required.' });
+    }
+
+    if (!/^\d{10}$/.test(phone.trim())) {
       return res.status(400).json({ message: 'Phone number must be exactly 10 digits.' });
     }
 
-    if (email && !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email.trim())) {
+    if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email.trim())) {
       return res.status(400).json({ message: 'Please enter a valid email address.' });
     }
 

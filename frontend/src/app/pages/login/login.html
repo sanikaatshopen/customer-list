@@ -3,7 +3,7 @@
 <!-- ============================================ -->
 
 <div class="login-wrapper d-flex align-items-center justify-content-center min-vh-100 bg-light">
-  <div class="card shadow-sm" style="width: 100%; max-width: 420px;">
+  <div class="card shadow-sm my-4" style="width: 100%; max-width: 440px;">
     <div class="card-body p-4">
 
       <!-- Title -->
@@ -21,39 +21,168 @@
       <!-- Form -->
       <form (ngSubmit)="onSubmit()">
 
+        <!-- Fullname (Signup only) -->
+        @if (isSignup) {
+          <div class="mb-3">
+            <label for="fullname" class="form-label">Fullname</label>
+            <input
+              type="text"
+              class="form-control"
+              [class.is-invalid]="fullnameError"
+              id="fullname"
+              placeholder="e.g. John Doe"
+              [(ngModel)]="fullname"
+              name="fullname"
+              (blur)="validateFullname()"
+              (input)="fullnameError ? validateFullname() : null"
+              required
+            />
+            @if (fullnameError) {
+              <div class="invalid-feedback">{{ fullnameError }}</div>
+            }
+          </div>
+        }
+
         <!-- Username -->
         <div class="mb-3">
           <label for="username" class="form-label">Username</label>
           <input
             type="text"
             class="form-control"
+            [class.is-invalid]="isSignup && usernameError"
             id="username"
             placeholder="Enter username"
             [(ngModel)]="username"
             name="username"
+            (input)="isSignup ? onUsernameInput($event) : null"
+            (blur)="isSignup ? validateUsername() : null"
             required
           />
+          @if (isSignup && usernameError) {
+            <div class="invalid-feedback">{{ usernameError }}</div>
+          }
         </div>
+
+        <!-- Date of Birth (Signup only) -->
+        @if (isSignup) {
+          <div class="mb-3">
+            <label class="form-label">Date of Birth</label>
+            <div class="row g-2">
+              <!-- Year -->
+              <div class="col-4">
+                <select
+                  class="form-select"
+                  [(ngModel)]="dobYear"
+                  name="dobYear"
+                  (change)="updateDays()"
+                  required
+                >
+                  <option value="" disabled selected>Year</option>
+                  @for (year of years; track year) {
+                    <option [value]="year">{{ year }}</option>
+                  }
+                </select>
+              </div>
+              <!-- Month -->
+              <div class="col-4">
+                <select
+                  class="form-select"
+                  [(ngModel)]="dobMonth"
+                  name="dobMonth"
+                  (change)="updateDays()"
+                  required
+                >
+                  <option value="" disabled selected>Month</option>
+                  @for (month of months; track month) {
+                    <option [value]="month">{{ month }}</option>
+                  }
+                </select>
+              </div>
+              <!-- Day -->
+              <div class="col-4">
+                <select
+                  class="form-select"
+                  [(ngModel)]="dobDay"
+                  name="dobDay"
+                  required
+                >
+                  <option value="" disabled selected>Day</option>
+                  @for (day of days; track day) {
+                    <option [value]="day">{{ day }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+          </div>
+        }
 
         <!-- Password -->
         <div class="mb-3">
           <label for="password" class="form-label">Password</label>
-          <input
-            type="password"
-            class="form-control"
-            id="password"
-            placeholder="Enter password"
-            [(ngModel)]="password"
-            name="password"
-            required
-          />
+          <div class="input-group">
+            <input
+              [type]="showPassword ? 'text' : 'password'"
+              class="form-control"
+              [class.is-invalid]="isSignup && passwordError"
+              id="password"
+              placeholder="Enter password"
+              [(ngModel)]="password"
+              name="password"
+              (blur)="isSignup ? validatePassword() : null"
+              (input)="isSignup && passwordError ? validatePassword() : null"
+              required
+            />
+            <button
+              class="btn btn-outline-secondary"
+              type="button"
+              (click)="showPassword = !showPassword"
+              style="border-top-left-radius: 0; border-bottom-left-radius: 0;"
+            >
+              {{ showPassword ? '👁️' : '🙈' }}
+            </button>
+          </div>
+          @if (isSignup && passwordError) {
+            <div class="text-danger small mt-1">{{ passwordError }}</div>
+          }
         </div>
+
+        <!-- Confirm Password (Signup only) -->
+        @if (isSignup) {
+          <div class="mb-3">
+            <label for="confirmPassword" class="form-label">Confirm Password</label>
+            <div class="input-group">
+              <input
+                [type]="showConfirmPassword ? 'text' : 'password'"
+                class="form-control"
+                [class.is-invalid]="confirmPasswordError"
+                id="confirmPassword"
+                placeholder="Confirm password"
+                [(ngModel)]="confirmPassword"
+                name="confirmPassword"
+                (blur)="validateConfirmPassword()"
+                (input)="confirmPasswordError ? validateConfirmPassword() : null"
+                required
+              />
+              <button
+                class="btn btn-outline-secondary"
+                type="button"
+                (click)="showConfirmPassword = !showConfirmPassword"
+                style="border-top-left-radius: 0; border-bottom-left-radius: 0;"
+              >
+                {{ showConfirmPassword ? '👁️' : '🙈' }}
+              </button>
+            </div>
+            @if (confirmPasswordError) {
+              <div class="text-danger small mt-1">{{ confirmPasswordError }}</div>
+            }
+          </div>
+        }
 
         <!-- Submit Button -->
         <button
           type="submit"
-          class="btn btn-primary w-100"
-          [disabled]="loading || !username || !password"
+          class="btn btn-primary w-100 mt-2"
+          [disabled]="loading || !isFormValid()"
         >
           @if (loading) {
             <span class="spinner-border spinner-border-sm me-2"></span>

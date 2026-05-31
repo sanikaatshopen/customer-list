@@ -27,6 +27,8 @@ export class CustomersComponent implements OnInit {
   newName = '';
   newEmail = '';
   newPhone = '';
+  newEmailError = '';
+  newPhoneError = '';
   addLoading = false;
   addError = '';
   addSuccess = '';
@@ -36,6 +38,8 @@ export class CustomersComponent implements OnInit {
   editName = '';
   editEmail = '';
   editPhone = '';
+  editEmailError = '';
+  editPhoneError = '';
   editLoading = false;
   editError = '';
 
@@ -72,6 +76,13 @@ export class CustomersComponent implements OnInit {
       return;
     }
 
+    this.validatePhone('new');
+    this.validateEmail('new');
+
+    if (this.newPhoneError || this.newEmailError) {
+      return;
+    }
+
     this.addLoading = true;
 
     this.customerService
@@ -86,6 +97,8 @@ export class CustomersComponent implements OnInit {
           this.newName = '';
           this.newEmail = '';
           this.newPhone = '';
+          this.newEmailError = '';
+          this.newPhoneError = '';
           this.addLoading = false;
           this.addSuccess = `"${customer.name}" added successfully!`;
           setTimeout(() => (this.addSuccess = ''), 3000);
@@ -104,6 +117,8 @@ export class CustomersComponent implements OnInit {
     this.editName = customer.name;
     this.editEmail = customer.email;
     this.editPhone = customer.phone;
+    this.editEmailError = '';
+    this.editPhoneError = '';
     this.editError = '';
   }
 
@@ -115,6 +130,13 @@ export class CustomersComponent implements OnInit {
 
     if (!this.editName.trim()) {
       this.editError = 'Customer name is required.';
+      return;
+    }
+
+    this.validatePhone('edit');
+    this.validateEmail('edit');
+
+    if (this.editPhoneError || this.editEmailError) {
       return;
     }
 
@@ -136,6 +158,8 @@ export class CustomersComponent implements OnInit {
             this.customers[index] = updated;
           }
           this.editCustomer = null;
+          this.editEmailError = '';
+          this.editPhoneError = '';
           this.editLoading = false;
         },
         error: (err) => {
@@ -149,6 +173,8 @@ export class CustomersComponent implements OnInit {
   // ── Close edit modal ───────────────────
   closeEdit(): void {
     this.editCustomer = null;
+    this.editEmailError = '';
+    this.editPhoneError = '';
   }
 
   // ── Open delete confirmation ───────────
@@ -176,5 +202,50 @@ export class CustomersComponent implements OnInit {
   // ── Cancel delete ──────────────────────
   cancelDelete(): void {
     this.deleteTarget = null;
+  }
+
+  // ── Filter non-numeric characters ──────
+  validatePhoneInput(event: Event, mode: 'new' | 'edit'): void {
+    const input = event.target as HTMLInputElement;
+    const cleanValue = input.value.replace(/[^0-9]/g, '');
+    if (mode === 'new') {
+      this.newPhone = cleanValue;
+      if (this.newPhoneError) {
+        this.validatePhone('new');
+      }
+    } else {
+      this.editPhone = cleanValue;
+      if (this.editPhoneError) {
+        this.validatePhone('edit');
+      }
+    }
+  }
+
+  // ── Validate Email format ───────────────
+  validateEmail(mode: 'new' | 'edit'): void {
+    const emailVal = mode === 'new' ? this.newEmail.trim() : this.editEmail.trim();
+    let error = '';
+    if (emailVal && !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(emailVal)) {
+      error = 'Please enter a valid email address.';
+    }
+    if (mode === 'new') {
+      this.newEmailError = error;
+    } else {
+      this.editEmailError = error;
+    }
+  }
+
+  // ── Validate Phone format ───────────────
+  validatePhone(mode: 'new' | 'edit'): void {
+    const phoneVal = mode === 'new' ? this.newPhone.trim() : this.editPhone.trim();
+    let error = '';
+    if (phoneVal && !/^\d{10}$/.test(phoneVal)) {
+      error = 'Phone number must be exactly 10 digits.';
+    }
+    if (mode === 'new') {
+      this.newPhoneError = error;
+    } else {
+      this.editPhoneError = error;
+    }
   }
 }

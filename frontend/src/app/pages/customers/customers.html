@@ -48,24 +48,37 @@
               <input
                 type="email"
                 class="form-control"
+                [class.is-invalid]="newEmailError"
                 id="newEmail"
                 placeholder="e.g. john@example.com"
                 [(ngModel)]="newEmail"
                 name="newEmail"
+                (blur)="validateEmail('new')"
+                (input)="newEmailError ? validateEmail('new') : null"
               />
+              @if (newEmailError) {
+                <div class="invalid-feedback">{{ newEmailError }}</div>
+              }
             </div>
 
             <!-- Phone -->
             <div class="mb-3">
-              <label for="newPhone" class="form-label">Phone</label>
+              <label for="newPhone" class="form-label">Phone (10 digits)</label>
               <input
                 type="text"
                 class="form-control"
+                [class.is-invalid]="newPhoneError"
                 id="newPhone"
-                placeholder="e.g. +91 9876543210"
+                placeholder="e.g. 9876543210"
                 [(ngModel)]="newPhone"
                 name="newPhone"
+                maxlength="10"
+                (input)="validatePhoneInput($event, 'new')"
+                (blur)="validatePhone('new')"
               />
+              @if (newPhoneError) {
+                <div class="invalid-feedback">{{ newPhoneError }}</div>
+              }
             </div>
 
             <!-- Submit -->
@@ -183,18 +196,31 @@
             <input
               type="email"
               class="form-control"
+              [class.is-invalid]="editEmailError"
               id="editEmail"
               [(ngModel)]="editEmail"
+              (blur)="validateEmail('edit')"
+              (input)="editEmailError ? validateEmail('edit') : null"
             />
+            @if (editEmailError) {
+              <div class="invalid-feedback">{{ editEmailError }}</div>
+            }
           </div>
           <div class="mb-3">
-            <label for="editPhone" class="form-label">Phone</label>
+            <label for="editPhone" class="form-label">Phone (10 digits)</label>
             <input
               type="text"
               class="form-control"
+              [class.is-invalid]="editPhoneError"
               id="editPhone"
               [(ngModel)]="editPhone"
+              maxlength="10"
+              (input)="validatePhoneInput($event, 'edit')"
+              (blur)="validatePhone('edit')"
             />
+            @if (editPhoneError) {
+              <div class="invalid-feedback">{{ editPhoneError }}</div>
+            }
           </div>
         </div>
         <div class="modal-footer">

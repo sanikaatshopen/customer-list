@@ -23,6 +23,9 @@ export class CustomersComponent implements OnInit {
   customers: Customer[] = [];
   loading = true;
 
+  // ── Modals ─────────────────────────────
+  showAddModal = false;
+
   // ── Add form fields ────────────────────
   newName = '';
   newEmail = '';
@@ -100,6 +103,7 @@ export class CustomersComponent implements OnInit {
           this.newEmailError = '';
           this.newPhoneError = '';
           this.addLoading = false;
+          this.showAddModal = false; // Close modal on success
           this.addSuccess = `"${customer.name}" added successfully!`;
           setTimeout(() => (this.addSuccess = ''), 3000);
         },

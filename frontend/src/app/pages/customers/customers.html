@@ -5,9 +5,16 @@
 <div class="container py-4">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2 class="mb-0 fw-bold text-dark"><i class="bi bi-people-fill me-2 text-primary"></i>My Customers</h2>
-    <button class="btn btn-primary rounded-pill px-4 fw-semibold shadow-sm" (click)="showAddModal = true">
-      <i class="bi bi-plus-lg me-2"></i>Add Customer
-    </button>
+    <div class="d-flex gap-2">
+      @if (selectedIds.size > 0) {
+        <button class="btn btn-outline-danger rounded-pill px-4 fw-semibold shadow-sm" (click)="openBulkDelete()">
+          <i class="bi bi-trash3 me-2"></i>Delete Selected ({{ selectedIds.size }})
+        </button>
+      }
+      <button class="btn btn-primary rounded-pill px-4 fw-semibold shadow-sm" (click)="showAddModal = true">
+        <i class="bi bi-plus-lg me-2"></i>Add Customer
+      </button>
+    </div>
   </div>
 
   <div class="row">
@@ -42,7 +49,10 @@
           <table class="table table-hover align-middle mb-0">
             <thead class="table-light">
               <tr>
-                <th class="ps-4 text-muted">#</th>
+                <th class="ps-4 text-muted" style="width: 50px;">
+                  <input class="form-check-input" type="checkbox" [checked]="isAllSelected()" (change)="toggleAll($event)" title="Select All">
+                </th>
+                <th class="text-muted">#</th>
                 <th class="text-muted">Name</th>
                 <th class="text-muted">Email</th>
                 <th class="text-muted">Phone</th>
@@ -51,8 +61,11 @@
             </thead>
             <tbody>
               @for (customer of customers; track customer._id; let i = $index) {
-                <tr>
-                  <td class="ps-4 text-muted">{{ i + 1 }}</td>
+                <tr [class.table-primary]="selectedIds.has(customer._id)" [style.--bs-table-bg-type]="selectedIds.has(customer._id) ? 'rgba(var(--bs-primary-rgb), 0.05)' : ''">
+                  <td class="ps-4">
+                    <input class="form-check-input" type="checkbox" [checked]="selectedIds.has(customer._id)" (change)="toggleSelection(customer._id)">
+                  </td>
+                  <td class="text-muted">{{ i + 1 }}</td>
                   <td class="fw-bold text-dark">{{ customer.name }}</td>
                   <td>{{ customer.email || '—' }}</td>
                   <td>{{ customer.phone || '—' }}</td>
@@ -86,7 +99,10 @@
                 <div class="card card-hover border-0 shadow-sm" style="border-left: 4px solid var(--bs-primary) !important;">
                   <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-2">
-                      <h5 class="card-title mb-0 fw-bold text-dark">{{ customer.name }}</h5>
+                      <div class="d-flex align-items-center gap-2">
+                        <input class="form-check-input mt-0" type="checkbox" [checked]="selectedIds.has(customer._id)" (change)="toggleSelection(customer._id)">
+                        <h5 class="card-title mb-0 fw-bold text-dark">{{ customer.name }}</h5>
+                      </div>
                       <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2 py-1">#{{ i + 1 }}</span>
                     </div>
                     <div class="text-muted small mb-3">
@@ -231,6 +247,32 @@
         <div class="modal-footer border-top-0 d-flex justify-content-center pb-4">
           <button class="btn btn-light rounded-pill px-4 fw-semibold" (click)="cancelDelete()">Cancel</button>
           <button class="btn btn-danger rounded-pill px-4 fw-bold" (click)="confirmDelete()">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ════════════════════════════════════════════ -->
+<!--  BULK DELETE CONFIRMATION MODAL              -->
+<!-- ════════════════════════════════════════════ -->
+@if (showBulkDeleteModal) {
+  <div class="modal-backdrop show" (click)="cancelBulkDelete()"></div>
+  <div class="modal d-block" tabindex="-1" (click)="cancelBulkDelete()">
+    <div class="modal-dialog modal-sm" (click)="$event.stopPropagation()">
+      <div class="modal-content border-0 shadow-lg">
+        <div class="modal-header border-bottom-0">
+          <h5 class="modal-title fw-bold text-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>Delete Selected</h5>
+          <button type="button" class="btn-close" (click)="cancelBulkDelete()"></button>
+        </div>
+        <div class="modal-body p-4 text-center">
+          <i class="bi bi-trash3 text-danger mb-3" style="font-size: 2.5rem;"></i>
+          <p class="mb-1">Are you sure you want to delete <strong>{{ selectedIds.size }}</strong> selected customers?</p>
+          <p class="text-muted small mb-0">This action cannot be undone.</p>
+        </div>
+        <div class="modal-footer border-top-0 d-flex justify-content-center pb-4">
+          <button class="btn btn-light rounded-pill px-4 fw-semibold" (click)="cancelBulkDelete()">Cancel</button>
+          <button class="btn btn-danger rounded-pill px-4 fw-bold" (click)="confirmBulkDelete()">Delete</button>
         </div>
       </div>
     </div>

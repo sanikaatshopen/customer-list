@@ -377,6 +377,36 @@ export class CustomersComponent implements OnInit {
     return this.customers.length > 0 && this.selectedIds.size === this.customers.length;
   }
 
+  // ── Bulk Download CSV ────────────────────
+  downloadCsv(): void {
+    if (this.selectedIds.size === 0) return;
+
+    const selectedCustomers = this.customers.filter(c => this.selectedIds.has(c._id));
+    
+    const headers = ['Name', 'Emails', 'Phones', 'Favorite'];
+    const rows = selectedCustomers.map(c => {
+      const emails = c.emails ? c.emails.map(e => e.value).join('; ') : '';
+      const phones = c.phones ? c.phones.map(p => p.value).join('; ') : '';
+      const isFavorite = c.isFavorite ? 'Yes' : 'No';
+      
+      return `"${c.name.replace(/"/g, '""')}","${emails.replace(/"/g, '""')}","${phones.replace(/"/g, '""')}","${isFavorite}"`;
+    });
+    
+    const csvContent = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    
+    const link = document.createElement('a');
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', 'customers_export.csv');
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  }
+
   // ── Bulk Delete Methods ──────────────────
   openBulkDelete(): void {
     if (this.selectedIds.size > 0) {

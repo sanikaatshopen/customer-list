@@ -7,6 +7,9 @@
     <h2 class="mb-0 fw-bold text-dark fs-4 fs-md-2 text-truncate"><i class="bi bi-people-fill me-2 text-primary"></i>My Customers</h2>
     <div class="d-flex gap-2 flex-shrink-0">
       @if (selectedIds.size > 0) {
+        <button class="btn btn-outline-success rounded-pill px-3 px-md-4 py-1 py-md-2 fw-semibold shadow-sm" (click)="downloadCsv()" title="Download CSV">
+          <i class="bi bi-filetype-csv me-1 me-md-2"></i><span class="d-none d-sm-inline">Download</span> ({{ selectedIds.size }})
+        </button>
         <button class="btn btn-outline-danger rounded-pill px-3 px-md-4 py-1 py-md-2 fw-semibold shadow-sm" (click)="openBulkDelete()">
           <i class="bi bi-trash3 me-1 me-md-2"></i><span class="d-none d-sm-inline">Delete Selected</span> ({{ selectedIds.size }})
         </button>

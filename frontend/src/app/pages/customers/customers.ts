@@ -270,6 +270,12 @@ export class CustomersComponent implements OnInit {
   validatePhoneInput(event: Event, mode: 'new' | 'edit', index: number): void {
     const input = event.target as HTMLInputElement;
     const cleanValue = input.value.replace(/[^0-9]/g, '');
+    
+    // Force DOM update so letters disappear immediately
+    if (input.value !== cleanValue) {
+      input.value = cleanValue;
+    }
+
     if (mode === 'new') {
       this.newPhones[index].value = cleanValue;
       if (this.newPhoneErrors[index]) {

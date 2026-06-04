@@ -22,6 +22,20 @@ export class CustomersComponent implements OnInit {
   // ── Customer list ──────────────────────
   customers: Customer[] = [];
   loading = true;
+  searchQuery = '';
+
+  get filteredCustomers(): Customer[] {
+    if (!this.searchQuery.trim()) {
+      return this.customers;
+    }
+    const query = this.searchQuery.toLowerCase().trim();
+    return this.customers.filter((c) => {
+      const nameMatch = c.name.toLowerCase().includes(query);
+      const emailMatch = (c.email || '').toLowerCase().includes(query);
+      const phoneMatch = (c.phone || '').includes(query);
+      return nameMatch || emailMatch || phoneMatch;
+    });
+  }
 
   // ── Modals ─────────────────────────────
   showAddModal = false;

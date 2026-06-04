@@ -172,15 +172,18 @@ router.post('/', async (req, res) => {
       }
     }
 
-    if (email) {
-      const existingEmail = await Customer.findOne({ email: email.trim(), createdBy: req.userId });
+    const primaryEmail = emails && emails.length > 0 ? emails[0].value.trim() : '';
+    const primaryPhone = phones && phones.length > 0 ? phones[0].value.trim() : '';
+
+    if (primaryEmail) {
+      const existingEmail = await Customer.findOne({ email: primaryEmail, createdBy: req.userId });
       if (existingEmail) {
         return res.status(400).json({ message: 'A customer with this email ID already exists.' });
       }
     }
 
-    if (phone) {
-      const existingPhone = await Customer.findOne({ phone: phone.trim(), createdBy: req.userId });
+    if (primaryPhone) {
+      const existingPhone = await Customer.findOne({ phone: primaryPhone, createdBy: req.userId });
       if (existingPhone) {
         return res.status(400).json({ message: 'A customer with this phone number already exists.' });
       }
@@ -188,8 +191,10 @@ router.post('/', async (req, res) => {
 
     const customer = new Customer({
       name,
-      email: email ? email.trim() : '',
-      phone: phone ? phone.trim() : '',
+      email: primaryEmail,
+      phone: primaryPhone,
+      emails: emails || [],
+      phones: phones || [],
       createdBy: req.userId,
     });
 
@@ -255,15 +260,18 @@ router.put('/:id', async (req, res) => {
       }
     }
 
-    if (email) {
-      const existingEmail = await Customer.findOne({ email: email.trim(), createdBy: req.userId, _id: { $ne: req.params.id } });
+    const primaryEmail = emails && emails.length > 0 ? emails[0].value.trim() : '';
+    const primaryPhone = phones && phones.length > 0 ? phones[0].value.trim() : '';
+
+    if (primaryEmail) {
+      const existingEmail = await Customer.findOne({ email: primaryEmail, createdBy: req.userId, _id: { $ne: req.params.id } });
       if (existingEmail) {
         return res.status(400).json({ message: 'A customer with this email ID already exists.' });
       }
     }
 
-    if (phone) {
-      const existingPhone = await Customer.findOne({ phone: phone.trim(), createdBy: req.userId, _id: { $ne: req.params.id } });
+    if (primaryPhone) {
+      const existingPhone = await Customer.findOne({ phone: primaryPhone, createdBy: req.userId, _id: { $ne: req.params.id } });
       if (existingPhone) {
         return res.status(400).json({ message: 'A customer with this phone number already exists.' });
       }
@@ -272,7 +280,7 @@ router.put('/:id', async (req, res) => {
     // Find the customer AND check ownership in one query
     const customer = await Customer.findOneAndUpdate(
       { _id: req.params.id, createdBy: req.userId },
-      { name, email: email ? email.trim() : '', phone: phone ? phone.trim() : '' },
+      { name, email: primaryEmail, phone: primaryPhone, emails: emails || [], phones: phones || [] },
       { new: true } // Return the updated document
     );
 

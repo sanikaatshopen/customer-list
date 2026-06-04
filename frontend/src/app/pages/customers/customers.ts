@@ -62,6 +62,10 @@ export class CustomersComponent implements OnInit {
 
   // ── Delete ─────────────────────────────
   deleteTarget: Customer | null = null;
+  
+  // ── Bulk Delete ────────────────────────
+  selectedIds: Set<string> = new Set<string>();
+  showBulkDeleteModal = false;
 
   constructor(private customerService: CustomerService) {}
 
@@ -265,5 +269,53 @@ export class CustomersComponent implements OnInit {
     } else {
       this.editPhoneError = error;
     }
+  }
+
+  // ── Bulk Selection Methods ───────────────
+  toggleSelection(id: string): void {
+    if (this.selectedIds.has(id)) {
+      this.selectedIds.delete(id);
+    } else {
+      this.selectedIds.add(id);
+    }
+  }
+
+  toggleAll(event: Event): void {
+    const checked = (event.target as HTMLInputElement).checked;
+    if (checked) {
+      this.customers.forEach((c) => this.selectedIds.add(c._id));
+    } else {
+      this.selectedIds.clear();
+    }
+  }
+
+  isAllSelected(): boolean {
+    return this.customers.length > 0 && this.selectedIds.size === this.customers.length;
+  }
+
+  // ── Bulk Delete Methods ──────────────────
+  openBulkDelete(): void {
+    if (this.selectedIds.size > 0) {
+      this.showBulkDeleteModal = true;
+    }
+  }
+
+  cancelBulkDelete(): void {
+    this.showBulkDeleteModal = false;
+  }
+
+  confirmBulkDelete(): void {
+    if (this.selectedIds.size === 0) return;
+    const ids = Array.from(this.selectedIds);
+    this.customerService.deleteCustomers(ids).subscribe({
+      next: () => {
+        this.customers = this.customers.filter((c) => !this.selectedIds.has(c._id));
+        this.selectedIds.clear();
+        this.showBulkDeleteModal = false;
+      },
+      error: () => {
+        this.showBulkDeleteModal = false;
+      },
+    });
   }
 }

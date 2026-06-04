@@ -61,4 +61,11 @@ export class CustomerService {
       headers: this.getHeaders(),
     });
   }
+
+  // ── Delete multiple customers ──────────
+  deleteCustomers(ids: string[]): Observable<any> {
+    return this.http.post(`${this.API_URL}/bulk-delete`, { ids }, {
+      headers: this.getHeaders(),
+    });
+  }
 }

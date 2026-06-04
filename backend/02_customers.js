@@ -30,6 +30,14 @@ const customerSchema = new mongoose.Schema(
     name: { type: String, required: true, trim: true },
     email: { type: String, trim: true, default: '' },
     phone: { type: String, trim: true, default: '' },
+    emails: [{
+      type: { type: String, default: 'personal' },
+      value: { type: String, trim: true }
+    }],
+    phones: [{
+      type: { type: String, default: 'mobile' },
+      value: { type: String, trim: true }
+    }],
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
@@ -79,7 +87,26 @@ router.get('/', async (req, res) => {
     const customers = await Customer.find({ createdBy: req.userId }).sort({
       createdAt: -1,
     });
-    res.json(customers);
+    const mappedCustomers = customers.map(c => {
+      const doc = c.toObject();
+      if (!doc.emails) doc.emails = [];
+      if (!doc.phones) doc.phones = [];
+
+      // Map existing single email/phone to the new arrays for backwards compatibility
+      // Also map string arrays to object arrays if they were saved in the old format
+      if (doc.emails && doc.emails.length > 0 && typeof doc.emails[0] === 'string') {
+        doc.emails = doc.emails.map(e => ({ type: 'personal', value: e }));
+      }
+      if (doc.phones && doc.phones.length > 0 && typeof doc.phones[0] === 'string') {
+        doc.phones = doc.phones.map(p => ({ type: 'mobile', value: p }));
+      }
+      
+      if (doc.email && doc.emails.length === 0) doc.emails.push({ type: 'personal', value: doc.email });
+      if (doc.phone && doc.phones.length === 0) doc.phones.push({ type: 'mobile', value: doc.phone });
+      return doc;
+    });
+    
+    res.json(mappedCustomers);
   } catch (err) {
     res.status(500).json({ message: 'Failed to fetch customers.' });
   }
@@ -123,18 +150,26 @@ router.get('/', async (req, res) => {
 // ──────────────────────────────────────────────
 router.post('/', async (req, res) => {
   try {
-    const { name, email, phone } = req.body;
+    const { name, emails, phones } = req.body;
 
     if (!name) {
       return res.status(400).json({ message: 'Customer name is required.' });
     }
 
-    if (phone && !/^\d{10}$/.test(phone.trim())) {
-      return res.status(400).json({ message: 'Phone number must be exactly 10 digits.' });
+    if (phones && Array.isArray(phones)) {
+      for (const p of phones) {
+        if (p.value && !/^\d{10}$/.test(p.value.trim())) {
+          return res.status(400).json({ message: 'Each phone number must be exactly 10 digits.' });
+        }
+      }
     }
 
-    if (email && !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email.trim())) {
-      return res.status(400).json({ message: 'Please enter a valid email address.' });
+    if (emails && Array.isArray(emails)) {
+      for (const e of emails) {
+        if (e.value && !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(e.value.trim())) {
+          return res.status(400).json({ message: 'Please enter valid email addresses.' });
+        }
+      }
     }
 
     if (email) {
@@ -202,14 +237,22 @@ router.post('/', async (req, res) => {
 // ──────────────────────────────────────────────
 router.put('/:id', async (req, res) => {
   try {
-    const { name, email, phone } = req.body;
+    const { name, emails, phones } = req.body;
 
-    if (phone && !/^\d{10}$/.test(phone.trim())) {
-      return res.status(400).json({ message: 'Phone number must be exactly 10 digits.' });
+    if (phones && Array.isArray(phones)) {
+      for (const p of phones) {
+        if (p.value && !/^\d{10}$/.test(p.value.trim())) {
+          return res.status(400).json({ message: 'Each phone number must be exactly 10 digits.' });
+        }
+      }
     }
 
-    if (email && !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email.trim())) {
-      return res.status(400).json({ message: 'Please enter a valid email address.' });
+    if (emails && Array.isArray(emails)) {
+      for (const e of emails) {
+        if (e.value && !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(e.value.trim())) {
+          return res.status(400).json({ message: 'Please enter valid email addresses.' });
+        }
+      }
     }
 
     if (email) {

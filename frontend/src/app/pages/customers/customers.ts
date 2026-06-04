@@ -9,7 +9,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { CustomerService, Customer } from '../../services/customer.service';
+import { CustomerService, Customer, ContactEntity } from '../../services/customer.service';
 
 @Component({
   selector: 'app-customers',
@@ -42,10 +42,10 @@ export class CustomersComponent implements OnInit {
 
   // ── Add form fields ────────────────────
   newName = '';
-  newEmail = '';
-  newPhone = '';
-  newEmailError = '';
-  newPhoneError = '';
+  newEmails: ContactEntity[] = [{ type: 'personal', value: '' }];
+  newPhones: ContactEntity[] = [{ type: 'mobile', value: '' }];
+  newEmailErrors: string[] = [''];
+  newPhoneErrors: string[] = [''];
   addLoading = false;
   addError = '';
   addSuccess = '';
@@ -53,10 +53,10 @@ export class CustomersComponent implements OnInit {
   // ── Edit modal fields ──────────────────
   editCustomer: Customer | null = null;
   editName = '';
-  editEmail = '';
-  editPhone = '';
-  editEmailError = '';
-  editPhoneError = '';
+  editEmails: ContactEntity[] = [];
+  editPhones: ContactEntity[] = [];
+  editEmailErrors: string[] = [];
+  editPhoneErrors: string[] = [];
   editLoading = false;
   editError = '';
 
@@ -87,6 +87,47 @@ export class CustomersComponent implements OnInit {
     });
   }
 
+  // ── Array Field Methods ─────────────────
+  addEmailField(mode: 'new' | 'edit'): void {
+    if (mode === 'new') {
+      this.newEmails.push({ type: 'personal', value: '' });
+      this.newEmailErrors.push('');
+    } else {
+      this.editEmails.push({ type: 'personal', value: '' });
+      this.editEmailErrors.push('');
+    }
+  }
+
+  removeEmailField(mode: 'new' | 'edit', index: number): void {
+    if (mode === 'new') {
+      this.newEmails.splice(index, 1);
+      this.newEmailErrors.splice(index, 1);
+    } else {
+      this.editEmails.splice(index, 1);
+      this.editEmailErrors.splice(index, 1);
+    }
+  }
+
+  addPhoneField(mode: 'new' | 'edit'): void {
+    if (mode === 'new') {
+      this.newPhones.push({ type: 'mobile', value: '' });
+      this.newPhoneErrors.push('');
+    } else {
+      this.editPhones.push({ type: 'mobile', value: '' });
+      this.editPhoneErrors.push('');
+    }
+  }
+
+  removePhoneField(mode: 'new' | 'edit', index: number): void {
+    if (mode === 'new') {
+      this.newPhones.splice(index, 1);
+      this.newPhoneErrors.splice(index, 1);
+    } else {
+      this.editPhones.splice(index, 1);
+      this.editPhoneErrors.splice(index, 1);
+    }
+  }
+
   // ── Add a new customer ─────────────────
   onAdd(): void {
     this.addError = '';
@@ -97,10 +138,10 @@ export class CustomersComponent implements OnInit {
       return;
     }
 
-    this.validatePhone('new');
-    this.validateEmail('new');
+    this.validatePhones('new');
+    this.validateEmails('new');
 
-    if (this.newPhoneError || this.newEmailError) {
+    if (this.newPhoneErrors.some(e => e) || this.newEmailErrors.some(e => e)) {
       return;
     }
 
@@ -109,17 +150,17 @@ export class CustomersComponent implements OnInit {
     this.customerService
       .addCustomer({
         name: this.newName.trim(),
-        email: this.newEmail.trim(),
-        phone: this.newPhone.trim(),
+        emails: this.newEmails.filter(e => e.value.trim()).map(e => ({ type: e.type, value: e.value.trim() })),
+        phones: this.newPhones.filter(p => p.value.trim()).map(p => ({ type: p.type, value: p.value.trim() })),
       })
       .subscribe({
         next: (customer) => {
           this.customers.unshift(customer); // Add to top of list
           this.newName = '';
-          this.newEmail = '';
-          this.newPhone = '';
-          this.newEmailError = '';
-          this.newPhoneError = '';
+          this.newEmails = [{ type: 'personal', value: '' }];
+          this.newPhones = [{ type: 'mobile', value: '' }];
+          this.newEmailErrors = [''];
+          this.newPhoneErrors = [''];
           this.addLoading = false;
           this.showAddModal = false; // Close modal on success
           this.addSuccess = `"${customer.name}" added successfully!`;
@@ -137,10 +178,10 @@ export class CustomersComponent implements OnInit {
   openEdit(customer: Customer): void {
     this.editCustomer = customer;
     this.editName = customer.name;
-    this.editEmail = customer.email;
-    this.editPhone = customer.phone;
-    this.editEmailError = '';
-    this.editPhoneError = '';
+    this.editEmails = customer.emails?.length ? customer.emails.map(e => ({ type: e.type || 'personal', value: e.value })) : [{ type: 'personal', value: '' }];
+    this.editPhones = customer.phones?.length ? customer.phones.map(p => ({ type: p.type || 'mobile', value: p.value })) : [{ type: 'mobile', value: '' }];
+    this.editEmailErrors = new Array(this.editEmails.length).fill('');
+    this.editPhoneErrors = new Array(this.editPhones.length).fill('');
     this.editError = '';
   }
 
@@ -155,10 +196,10 @@ export class CustomersComponent implements OnInit {
       return;
     }
 
-    this.validatePhone('edit');
-    this.validateEmail('edit');
+    this.validatePhones('edit');
+    this.validateEmails('edit');
 
-    if (this.editPhoneError || this.editEmailError) {
+    if (this.editPhoneErrors.some(e => e) || this.editEmailErrors.some(e => e)) {
       return;
     }
 
@@ -167,8 +208,8 @@ export class CustomersComponent implements OnInit {
     this.customerService
       .updateCustomer(this.editCustomer._id, {
         name: this.editName.trim(),
-        email: this.editEmail.trim(),
-        phone: this.editPhone.trim(),
+        emails: this.editEmails.filter(e => e.value.trim()).map(e => ({ type: e.type, value: e.value.trim() })),
+        phones: this.editPhones.filter(p => p.value.trim()).map(p => ({ type: p.type, value: p.value.trim() })),
       })
       .subscribe({
         next: (updated) => {
@@ -180,8 +221,6 @@ export class CustomersComponent implements OnInit {
             this.customers[index] = updated;
           }
           this.editCustomer = null;
-          this.editEmailError = '';
-          this.editPhoneError = '';
           this.editLoading = false;
         },
         error: (err) => {
@@ -195,8 +234,6 @@ export class CustomersComponent implements OnInit {
   // ── Close edit modal ───────────────────
   closeEdit(): void {
     this.editCustomer = null;
-    this.editEmailError = '';
-    this.editPhoneError = '';
   }
 
   // ── Open delete confirmation ───────────
@@ -227,47 +264,55 @@ export class CustomersComponent implements OnInit {
   }
 
   // ── Filter non-numeric characters ──────
-  validatePhoneInput(event: Event, mode: 'new' | 'edit'): void {
+  validatePhoneInput(event: Event, mode: 'new' | 'edit', index: number): void {
     const input = event.target as HTMLInputElement;
     const cleanValue = input.value.replace(/[^0-9]/g, '');
     if (mode === 'new') {
-      this.newPhone = cleanValue;
-      if (this.newPhoneError) {
-        this.validatePhone('new');
+      this.newPhones[index].value = cleanValue;
+      if (this.newPhoneErrors[index]) {
+        this.validatePhones('new');
       }
     } else {
-      this.editPhone = cleanValue;
-      if (this.editPhoneError) {
-        this.validatePhone('edit');
+      this.editPhones[index].value = cleanValue;
+      if (this.editPhoneErrors[index]) {
+        this.validatePhones('edit');
       }
     }
   }
 
   // ── Validate Email format ───────────────
-  validateEmail(mode: 'new' | 'edit'): void {
-    const emailVal = mode === 'new' ? this.newEmail.trim() : this.editEmail.trim();
-    let error = '';
-    if (emailVal && !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(emailVal)) {
-      error = 'Please enter a valid email address.';
-    }
+  validateEmails(mode: 'new' | 'edit'): void {
+    const emails = mode === 'new' ? this.newEmails : this.editEmails;
+    const errors = emails.map(emailObj => {
+      const trimmed = emailObj.value.trim();
+      if (trimmed && !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(trimmed)) {
+        return 'Please enter a valid email address.';
+      }
+      return '';
+    });
+    
     if (mode === 'new') {
-      this.newEmailError = error;
+      this.newEmailErrors = errors;
     } else {
-      this.editEmailError = error;
+      this.editEmailErrors = errors;
     }
   }
 
   // ── Validate Phone format ───────────────
-  validatePhone(mode: 'new' | 'edit'): void {
-    const phoneVal = mode === 'new' ? this.newPhone.trim() : this.editPhone.trim();
-    let error = '';
-    if (phoneVal && !/^\d{10}$/.test(phoneVal)) {
-      error = 'Phone number must be exactly 10 digits.';
-    }
+  validatePhones(mode: 'new' | 'edit'): void {
+    const phones = mode === 'new' ? this.newPhones : this.editPhones;
+    const errors = phones.map(phoneObj => {
+      const trimmed = phoneObj.value.trim();
+      if (trimmed && !/^\d{10}$/.test(trimmed)) {
+        return 'Phone number must be exactly 10 digits.';
+      }
+      return '';
+    });
+    
     if (mode === 'new') {
-      this.newPhoneError = error;
+      this.newPhoneErrors = errors;
     } else {
-      this.editPhoneError = error;
+      this.editPhoneErrors = errors;
     }
   }
 

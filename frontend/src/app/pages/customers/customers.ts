@@ -40,6 +40,36 @@ export class CustomersComponent implements OnInit {
     });
   }
 
+  get favoriteCustomers(): Customer[] {
+    return this.filteredCustomers.filter(c => c.isFavorite);
+  }
+
+  get otherCustomers(): Customer[] {
+    return this.filteredCustomers.filter(c => !c.isFavorite);
+  }
+
+  toggleFavorite(customer: Customer): void {
+    const originalStatus = customer.isFavorite;
+    customer.isFavorite = !originalStatus; // Optimistic update
+
+    this.customerService
+      .updateCustomer(customer._id, {
+        name: customer.name,
+        emails: customer.emails,
+        phones: customer.phones,
+        isFavorite: customer.isFavorite
+      })
+      .subscribe({
+        next: (updated) => {
+          customer.isFavorite = updated.isFavorite;
+        },
+        error: () => {
+          customer.isFavorite = originalStatus;
+          alert('Failed to update favorite status.');
+        }
+      });
+  }
+
   // ── Modals ─────────────────────────────
   showAddModal = false;
 

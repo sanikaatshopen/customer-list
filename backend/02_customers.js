@@ -38,6 +38,7 @@ const customerSchema = new mongoose.Schema(
       type: { type: String, default: 'mobile' },
       value: { type: String, trim: true }
     }],
+    isFavorite: { type: Boolean, default: false },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
@@ -150,7 +151,7 @@ router.get('/', async (req, res) => {
 // ──────────────────────────────────────────────
 router.post('/', async (req, res) => {
   try {
-    const { name, emails, phones } = req.body;
+    const { name, emails, phones, isFavorite } = req.body;
 
     if (!name) {
       return res.status(400).json({ message: 'Customer name is required.' });
@@ -195,6 +196,7 @@ router.post('/', async (req, res) => {
       phone: primaryPhone,
       emails: emails || [],
       phones: phones || [],
+      isFavorite: isFavorite || false,
       createdBy: req.userId,
     });
 
@@ -242,7 +244,7 @@ router.post('/', async (req, res) => {
 // ──────────────────────────────────────────────
 router.put('/:id', async (req, res) => {
   try {
-    const { name, emails, phones } = req.body;
+    const { name, emails, phones, isFavorite } = req.body;
 
     if (phones && Array.isArray(phones)) {
       for (const p of phones) {
@@ -280,7 +282,14 @@ router.put('/:id', async (req, res) => {
     // Find the customer AND check ownership in one query
     const customer = await Customer.findOneAndUpdate(
       { _id: req.params.id, createdBy: req.userId },
-      { name, email: primaryEmail, phone: primaryPhone, emails: emails || [], phones: phones || [] },
+      { 
+        name, 
+        email: primaryEmail, 
+        phone: primaryPhone, 
+        emails: emails || [], 
+        phones: phones || [],
+        ...(isFavorite !== undefined && { isFavorite })
+      },
       { new: true } // Return the updated document
     );
 

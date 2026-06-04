@@ -137,10 +137,24 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ message: 'Please enter a valid email address.' });
     }
 
+    if (email) {
+      const existingEmail = await Customer.findOne({ email: email.trim(), createdBy: req.userId });
+      if (existingEmail) {
+        return res.status(400).json({ message: 'A customer with this email ID already exists.' });
+      }
+    }
+
+    if (phone) {
+      const existingPhone = await Customer.findOne({ phone: phone.trim(), createdBy: req.userId });
+      if (existingPhone) {
+        return res.status(400).json({ message: 'A customer with this phone number already exists.' });
+      }
+    }
+
     const customer = new Customer({
       name,
-      email: email || '',
-      phone: phone || '',
+      email: email ? email.trim() : '',
+      phone: phone ? phone.trim() : '',
       createdBy: req.userId,
     });
 
@@ -198,10 +212,24 @@ router.put('/:id', async (req, res) => {
       return res.status(400).json({ message: 'Please enter a valid email address.' });
     }
 
+    if (email) {
+      const existingEmail = await Customer.findOne({ email: email.trim(), createdBy: req.userId, _id: { $ne: req.params.id } });
+      if (existingEmail) {
+        return res.status(400).json({ message: 'A customer with this email ID already exists.' });
+      }
+    }
+
+    if (phone) {
+      const existingPhone = await Customer.findOne({ phone: phone.trim(), createdBy: req.userId, _id: { $ne: req.params.id } });
+      if (existingPhone) {
+        return res.status(400).json({ message: 'A customer with this phone number already exists.' });
+      }
+    }
+
     // Find the customer AND check ownership in one query
     const customer = await Customer.findOneAndUpdate(
       { _id: req.params.id, createdBy: req.userId },
-      { name, email, phone },
+      { name, email: email ? email.trim() : '', phone: phone ? phone.trim() : '' },
       { new: true } // Return the updated document
     );
 
@@ -214,6 +242,45 @@ router.put('/:id', async (req, res) => {
     res.json(customer);
   } catch (err) {
     res.status(500).json({ message: 'Failed to update customer.' });
+  }
+});
+
+// ──────────────────────────────────────────────
+//  POST /customers/bulk-delete
+// ──────────────────────────────────────────────
+//  Deletes multiple customers at once. Only the owner can delete them.
+//
+//  Postman:
+//    Method : POST
+//    URL    : http://localhost:3000/customers/bulk-delete
+//    Headers:
+//      Content-Type  : application/json
+//      Authorization : Bearer <your_token>
+//    Body   : (raw JSON)
+//      {
+//        "ids": ["665abc123def456", "665abc123def457"]
+//      }
+// ──────────────────────────────────────────────
+router.post('/bulk-delete', async (req, res) => {
+  try {
+    const { ids } = req.body;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ message: 'No customer IDs provided.' });
+    }
+
+    // Delete all matching IDs that belong to this user
+    const result = await Customer.deleteMany({
+      _id: { $in: ids },
+      createdBy: req.userId,
+    });
+
+    res.json({
+      message: `${result.deletedCount} customers deleted successfully.`,
+      deletedCount: result.deletedCount,
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to delete customers.' });
   }
 });
 

@@ -33,7 +33,10 @@ export class CustomersComponent implements OnInit {
       const nameMatch = c.name.toLowerCase().includes(query);
       const emailMatch = (c.email || '').toLowerCase().includes(query);
       const phoneMatch = (c.phone || '').includes(query);
-      return nameMatch || emailMatch || phoneMatch;
+      const emailsMatch = c.emails?.some(e => e.value.toLowerCase().includes(query)) || false;
+      const phonesMatch = c.phones?.some(p => p.value.includes(query)) || false;
+      
+      return nameMatch || emailMatch || phoneMatch || emailsMatch || phonesMatch;
     });
   }
 

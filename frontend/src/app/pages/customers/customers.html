@@ -5,9 +5,16 @@
 <div class="container py-4">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2 class="mb-0 fw-bold text-dark"><i class="bi bi-people-fill me-2 text-primary"></i>My Customers</h2>
-    <button class="btn btn-primary rounded-pill px-4 fw-semibold shadow-sm" (click)="showAddModal = true">
-      <i class="bi bi-plus-lg me-2"></i>Add Customer
-    </button>
+    <div class="d-flex gap-2">
+      @if (selectedIds.size > 0) {
+        <button class="btn btn-outline-danger rounded-pill px-4 fw-semibold shadow-sm" (click)="openBulkDelete()">
+          <i class="bi bi-trash3 me-2"></i>Delete Selected ({{ selectedIds.size }})
+        </button>
+      }
+      <button class="btn btn-primary rounded-pill px-4 fw-semibold shadow-sm" (click)="showAddModal = true">
+        <i class="bi bi-plus-lg me-2"></i>Add Customer
+      </button>
+    </div>
   </div>
 
   <div class="row">
@@ -37,20 +44,38 @@
       <!-- Customer List Responsive View -->
       @if (!loading && customers.length > 0) {
         
-        <!-- Desktop Table View -->
-        <div class="table-responsive d-none d-md-block shadow-sm rounded bg-white overflow-hidden">
-          <table class="table table-hover align-middle mb-0">
-            <thead class="table-light">
-              <tr>
-                <th class="ps-4 text-muted">#</th>
-                <th class="text-muted">Name</th>
-                <th class="text-muted">Emails</th>
-                <th class="text-muted">Phones</th>
-                <th class="text-end pe-4 text-muted">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (customer of customers; track customer._id; let i = $index) {
+        <!-- Search Bar -->
+        <div class="mb-4">
+          <div class="input-group shadow-sm rounded-pill overflow-hidden border">
+            <span class="input-group-text bg-white border-0 ps-4 text-muted"><i class="bi bi-search"></i></span>
+            <input type="text" class="form-control border-0 py-2 shadow-none" placeholder="Search by name, email or phone..." [(ngModel)]="searchQuery">
+          </div>
+        </div>
+
+        <!-- No search results -->
+        @if (filteredCustomers.length === 0) {
+          <div class="text-center py-5 bg-white rounded shadow-sm border border-light">
+            <i class="bi bi-search text-muted" style="font-size: 3rem;"></i>
+            <h4 class="text-muted mt-3">No results found</h4>
+            <p class="text-muted">We couldn't find any customers matching "{{ searchQuery }}"</p>
+          </div>
+        }
+
+        @if (filteredCustomers.length > 0) {
+          <!-- Desktop Table View -->
+          <div class="table-responsive d-none d-md-block shadow-sm rounded bg-white overflow-hidden">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th class="ps-4 text-muted">#</th>
+                  <th class="text-muted">Name</th>
+                  <th class="text-muted">Email</th>
+                  <th class="text-muted">Phone</th>
+                  <th class="text-end pe-4 text-muted">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (customer of filteredCustomers; track customer._id; let i = $index) {
                 <tr>
                   <td class="ps-4 text-muted">{{ i + 1 }}</td>
                   <td class="fw-bold text-dark">{{ customer.name }}</td>
@@ -94,15 +119,18 @@
           </table>
         </div>
 
-        <!-- Mobile Cards View -->
-        <div class="d-block d-md-none">
-          <div class="row gx-0">
-            @for (customer of customers; track customer._id; let i = $index) {
+          <!-- Mobile Cards View -->
+          <div class="d-block d-md-none">
+            <div class="row gx-0">
+              @for (customer of filteredCustomers; track customer._id; let i = $index) {
               <div class="col-12 mb-3">
                 <div class="card card-hover border-0 shadow-sm" style="border-left: 4px solid var(--bs-primary) !important;">
                   <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-2">
-                      <h5 class="card-title mb-0 fw-bold text-dark">{{ customer.name }}</h5>
+                      <div class="d-flex align-items-center gap-2">
+                        <input class="form-check-input mt-0" type="checkbox" [checked]="selectedIds.has(customer._id)" (change)="toggleSelection(customer._id)">
+                        <h5 class="card-title mb-0 fw-bold text-dark">{{ customer.name }}</h5>
+                      </div>
                       <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2 py-1">#{{ i + 1 }}</span>
                     </div>
                     <div class="text-muted small mb-3">
@@ -148,8 +176,9 @@
                 </div>
               </div>
             }
+            </div>
           </div>
-        </div>
+        }
       }
     </div>
   </div>
@@ -345,6 +374,32 @@
         <div class="modal-footer border-top-0 d-flex justify-content-center pb-4">
           <button class="btn btn-light rounded-pill px-4 fw-semibold" (click)="cancelDelete()">Cancel</button>
           <button class="btn btn-danger rounded-pill px-4 fw-bold" (click)="confirmDelete()">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ════════════════════════════════════════════ -->
+<!--  BULK DELETE CONFIRMATION MODAL              -->
+<!-- ════════════════════════════════════════════ -->
+@if (showBulkDeleteModal) {
+  <div class="modal-backdrop show" (click)="cancelBulkDelete()"></div>
+  <div class="modal d-block" tabindex="-1" (click)="cancelBulkDelete()">
+    <div class="modal-dialog modal-sm" (click)="$event.stopPropagation()">
+      <div class="modal-content border-0 shadow-lg">
+        <div class="modal-header border-bottom-0">
+          <h5 class="modal-title fw-bold text-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>Delete Selected</h5>
+          <button type="button" class="btn-close" (click)="cancelBulkDelete()"></button>
+        </div>
+        <div class="modal-body p-4 text-center">
+          <i class="bi bi-trash3 text-danger mb-3" style="font-size: 2.5rem;"></i>
+          <p class="mb-1">Are you sure you want to delete <strong>{{ selectedIds.size }}</strong> selected customers?</p>
+          <p class="text-muted small mb-0">This action cannot be undone.</p>
+        </div>
+        <div class="modal-footer border-top-0 d-flex justify-content-center pb-4">
+          <button class="btn btn-light rounded-pill px-4 fw-semibold" (click)="cancelBulkDelete()">Cancel</button>
+          <button class="btn btn-danger rounded-pill px-4 fw-bold" (click)="confirmBulkDelete()">Delete</button>
         </div>
       </div>
     </div>

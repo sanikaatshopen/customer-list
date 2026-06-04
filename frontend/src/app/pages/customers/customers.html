@@ -3,16 +3,16 @@
 <!-- ============================================ -->
 
 <div class="container py-4">
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="mb-0 fw-bold text-dark"><i class="bi bi-people-fill me-2 text-primary"></i>My Customers</h2>
-    <div class="d-flex gap-2">
+  <div class="d-flex justify-content-between align-items-center gap-2 mb-4">
+    <h2 class="mb-0 fw-bold text-dark fs-4 fs-md-2 text-truncate"><i class="bi bi-people-fill me-2 text-primary"></i>My Customers</h2>
+    <div class="d-flex gap-2 flex-shrink-0">
       @if (selectedIds.size > 0) {
-        <button class="btn btn-outline-danger rounded-pill px-4 fw-semibold shadow-sm" (click)="openBulkDelete()">
-          <i class="bi bi-trash3 me-2"></i>Delete Selected ({{ selectedIds.size }})
+        <button class="btn btn-outline-danger rounded-pill px-3 px-md-4 py-1 py-md-2 fw-semibold shadow-sm" (click)="openBulkDelete()">
+          <i class="bi bi-trash3 me-1 me-md-2"></i><span class="d-none d-sm-inline">Delete Selected</span> ({{ selectedIds.size }})
         </button>
       }
-      <button class="btn btn-primary rounded-pill px-4 fw-semibold shadow-sm" (click)="showAddModal = true">
-        <i class="bi bi-plus-lg me-2"></i>Add Customer
+      <button class="btn btn-primary rounded-pill px-3 px-md-4 py-1 py-md-2 fw-semibold shadow-sm" (click)="showAddModal = true">
+        <i class="bi bi-plus-lg me-1 me-md-2 d-none d-sm-inline-block"></i><i class="bi bi-plus-lg d-inline-block d-sm-none"></i> <span class="d-none d-sm-inline">Add Customer</span><span class="d-inline d-sm-none">Add</span>
       </button>
     </div>
   </div>
@@ -202,36 +202,36 @@
           <h5 class="modal-title fw-bold"><i class="bi bi-person-plus-fill me-2"></i>Add Customer</h5>
           <button type="button" class="btn-close btn-close-white" (click)="showAddModal = false"></button>
         </div>
-        <div class="modal-body p-4">
+        <div class="modal-body p-3 p-md-4">
           @if (addSuccess) {
-            <div class="alert alert-success py-2 border-0"><i class="bi bi-check-circle me-2"></i>{{ addSuccess }}</div>
+            <div class="alert alert-success py-1 py-md-2 border-0"><i class="bi bi-check-circle me-2"></i>{{ addSuccess }}</div>
           }
           @if (addError) {
-            <div class="alert alert-danger py-2 border-0"><i class="bi bi-exclamation-triangle me-2"></i>{{ addError }}</div>
+            <div class="alert alert-danger py-1 py-md-2 border-0"><i class="bi bi-exclamation-triangle me-2"></i>{{ addError }}</div>
           }
 
           <form (ngSubmit)="onAdd()">
-            <div class="mb-3">
+            <div class="mb-2 mb-md-3">
               <label for="newName" class="form-label fw-semibold">Name *</label>
-              <input type="text" class="form-control bg-light border-0" id="newName" placeholder="e.g. John Doe" [(ngModel)]="newName" name="newName" required />
+              <input type="text" class="form-control bg-light border-0 py-1 py-md-2" id="newName" placeholder="e.g. John Doe" [(ngModel)]="newName" name="newName" required />
             </div>
             
-            <div class="mb-3">
+            <div class="mb-2 mb-md-3">
               <label class="form-label fw-semibold">Email(s)</label>
               @for (email of newEmails; track $index; let i = $index) {
                 <div class="d-flex mb-2">
-                  <select class="form-select bg-light border-0 me-2" style="width: auto;" [(ngModel)]="newEmails[i].type" name="newEmailType_{{i}}">
+                  <select class="form-select bg-light border-0 me-2 py-1 py-md-2" style="width: auto;" [(ngModel)]="newEmails[i].type" name="newEmailType_{{i}}">
                     <option value="personal">Personal</option>
                     <option value="work">Work</option>
                     <option value="private">Private</option>
                     <option value="other">Other</option>
                   </select>
                   <div class="flex-grow-1">
-                    <input type="email" class="form-control bg-light border-0" [class.is-invalid]="newEmailErrors[i]" placeholder="e.g. john@example.com" [(ngModel)]="newEmails[i].value" name="newEmail_{{i}}" (blur)="validateEmails('new')" (input)="newEmailErrors[i] ? validateEmails('new') : null" />
+                    <input type="email" class="form-control bg-light border-0 py-1 py-md-2" [class.is-invalid]="newEmailErrors[i]" placeholder="e.g. john@example.com" [(ngModel)]="newEmails[i].value" name="newEmail_{{i}}" (blur)="validateEmails('new')" (input)="newEmailErrors[i] ? validateEmails('new') : null" />
                     @if (newEmailErrors[i]) { <div class="invalid-feedback">{{ newEmailErrors[i] }}</div> }
                   </div>
                   @if (newEmails.length > 1) {
-                    <button type="button" class="btn btn-outline-danger ms-2" (click)="removeEmailField('new', i)">
+                    <button type="button" class="btn btn-outline-danger ms-2 py-1 py-md-2" (click)="removeEmailField('new', i)">
                       <i class="bi bi-trash"></i>
                     </button>
                   }
@@ -240,11 +240,11 @@
               <button type="button" class="btn btn-sm btn-outline-primary mt-1 rounded-pill" (click)="addEmailField('new')"><i class="bi bi-plus"></i> Add Email</button>
             </div>
             
-            <div class="mb-4">
+            <div class="mb-3 mb-md-4">
               <label class="form-label fw-semibold">Phone(s) (10 digits)</label>
               @for (phone of newPhones; track $index; let i = $index) {
                 <div class="d-flex mb-2">
-                  <select class="form-select bg-light border-0 me-2" style="width: auto;" [(ngModel)]="newPhones[i].type" name="newPhoneType_{{i}}">
+                  <select class="form-select bg-light border-0 me-2 py-1 py-md-2" style="width: auto;" [(ngModel)]="newPhones[i].type" name="newPhoneType_{{i}}">
                     <option value="mobile">Mobile</option>
                     <option value="work">Work</option>
                     <option value="private">Private</option>
@@ -252,11 +252,11 @@
                     <option value="other">Other</option>
                   </select>
                   <div class="flex-grow-1">
-                    <input type="text" class="form-control bg-light border-0" [class.is-invalid]="newPhoneErrors[i]" placeholder="e.g. 9876543210" [(ngModel)]="newPhones[i].value" name="newPhone_{{i}}" maxlength="10" (input)="validatePhoneInput($event, 'new', i)" (blur)="validatePhones('new')" />
+                    <input type="text" inputmode="numeric" pattern="[0-9]*" class="form-control bg-light border-0 py-1 py-md-2" [class.is-invalid]="newPhoneErrors[i]" placeholder="e.g. 9876543210" [(ngModel)]="newPhones[i].value" name="newPhone_{{i}}" maxlength="10" (input)="validatePhoneInput($event, 'new', i)" (blur)="validatePhones('new')" />
                     @if (newPhoneErrors[i]) { <div class="invalid-feedback">{{ newPhoneErrors[i] }}</div> }
                   </div>
                   @if (newPhones.length > 1) {
-                    <button type="button" class="btn btn-outline-danger ms-2" (click)="removePhoneField('new', i)">
+                    <button type="button" class="btn btn-outline-danger ms-2 py-1 py-md-2" (click)="removePhoneField('new', i)">
                       <i class="bi bi-trash"></i>
                     </button>
                   }
@@ -265,7 +265,7 @@
               <button type="button" class="btn btn-sm btn-outline-primary mt-1 rounded-pill" (click)="addPhoneField('new')"><i class="bi bi-plus"></i> Add Phone</button>
             </div>
             
-            <button type="submit" class="btn btn-primary w-100 rounded-pill fw-bold py-2" [disabled]="addLoading || !newName.trim()">
+            <button type="submit" class="btn btn-primary w-100 rounded-pill fw-bold py-1 py-md-2" [disabled]="addLoading || !newName.trim()">
               @if (addLoading) { <span class="spinner-border spinner-border-sm me-2"></span> }
               Save Customer
             </button>
@@ -288,32 +288,32 @@
           <h5 class="modal-title fw-bold text-dark"><i class="bi bi-pencil-square me-2 text-primary"></i>Edit Customer</h5>
           <button type="button" class="btn-close" (click)="closeEdit()"></button>
         </div>
-        <div class="modal-body p-4">
+        <div class="modal-body p-3 p-md-4">
           @if (editError) {
-            <div class="alert alert-danger py-2 border-0"><i class="bi bi-exclamation-triangle me-2"></i>{{ editError }}</div>
+            <div class="alert alert-danger py-1 py-md-2 border-0"><i class="bi bi-exclamation-triangle me-2"></i>{{ editError }}</div>
           }
 
-          <div class="mb-3">
+          <div class="mb-2 mb-md-3">
             <label for="editName" class="form-label fw-semibold">Name *</label>
-            <input type="text" class="form-control bg-light border-0" id="editName" [(ngModel)]="editName" />
+            <input type="text" class="form-control bg-light border-0 py-1 py-md-2" id="editName" [(ngModel)]="editName" />
           </div>
           
-          <div class="mb-3">
+          <div class="mb-2 mb-md-3">
             <label class="form-label fw-semibold">Email(s)</label>
             @for (email of editEmails; track $index; let i = $index) {
               <div class="d-flex mb-2">
-                <select class="form-select bg-light border-0 me-2" style="width: auto;" [(ngModel)]="editEmails[i].type" name="editEmailType_{{i}}">
+                <select class="form-select bg-light border-0 me-2 py-1 py-md-2" style="width: auto;" [(ngModel)]="editEmails[i].type" name="editEmailType_{{i}}">
                   <option value="personal">Personal</option>
                   <option value="work">Work</option>
                   <option value="private">Private</option>
                   <option value="other">Other</option>
                 </select>
                 <div class="flex-grow-1">
-                  <input type="email" class="form-control bg-light border-0" [class.is-invalid]="editEmailErrors[i]" [(ngModel)]="editEmails[i].value" name="editEmail_{{i}}" (blur)="validateEmails('edit')" (input)="editEmailErrors[i] ? validateEmails('edit') : null" />
+                  <input type="email" class="form-control bg-light border-0 py-1 py-md-2" [class.is-invalid]="editEmailErrors[i]" [(ngModel)]="editEmails[i].value" name="editEmail_{{i}}" (blur)="validateEmails('edit')" (input)="editEmailErrors[i] ? validateEmails('edit') : null" />
                   @if (editEmailErrors[i]) { <div class="invalid-feedback">{{ editEmailErrors[i] }}</div> }
                 </div>
                 @if (editEmails.length > 1) {
-                  <button type="button" class="btn btn-outline-danger ms-2" (click)="removeEmailField('edit', i)">
+                  <button type="button" class="btn btn-outline-danger ms-2 py-1 py-md-2" (click)="removeEmailField('edit', i)">
                     <i class="bi bi-trash"></i>
                   </button>
                 }
@@ -322,11 +322,11 @@
             <button type="button" class="btn btn-sm btn-outline-primary mt-1 rounded-pill" (click)="addEmailField('edit')"><i class="bi bi-plus"></i> Add Email</button>
           </div>
           
-          <div class="mb-4">
+          <div class="mb-3 mb-md-4">
             <label class="form-label fw-semibold">Phone(s) (10 digits)</label>
             @for (phone of editPhones; track $index; let i = $index) {
               <div class="d-flex mb-2">
-                <select class="form-select bg-light border-0 me-2" style="width: auto;" [(ngModel)]="editPhones[i].type" name="editPhoneType_{{i}}">
+                <select class="form-select bg-light border-0 me-2 py-1 py-md-2" style="width: auto;" [(ngModel)]="editPhones[i].type" name="editPhoneType_{{i}}">
                   <option value="mobile">Mobile</option>
                   <option value="work">Work</option>
                   <option value="private">Private</option>
@@ -334,11 +334,11 @@
                   <option value="other">Other</option>
                 </select>
                 <div class="flex-grow-1">
-                  <input type="text" class="form-control bg-light border-0" [class.is-invalid]="editPhoneErrors[i]" [(ngModel)]="editPhones[i].value" name="editPhone_{{i}}" maxlength="10" (input)="validatePhoneInput($event, 'edit', i)" (blur)="validatePhones('edit')" />
+                  <input type="text" inputmode="numeric" pattern="[0-9]*" class="form-control bg-light border-0 py-1 py-md-2" [class.is-invalid]="editPhoneErrors[i]" [(ngModel)]="editPhones[i].value" name="editPhone_{{i}}" maxlength="10" (input)="validatePhoneInput($event, 'edit', i)" (blur)="validatePhones('edit')" />
                   @if (editPhoneErrors[i]) { <div class="invalid-feedback">{{ editPhoneErrors[i] }}</div> }
                 </div>
                 @if (editPhones.length > 1) {
-                  <button type="button" class="btn btn-outline-danger ms-2" (click)="removePhoneField('edit', i)">
+                  <button type="button" class="btn btn-outline-danger ms-2 py-1 py-md-2" (click)="removePhoneField('edit', i)">
                     <i class="bi bi-trash"></i>
                   </button>
                 }
@@ -348,9 +348,9 @@
           </div>
           
         </div>
-        <div class="modal-footer border-top-0 pt-0 px-4 pb-4">
-          <button class="btn btn-light rounded-pill px-4 fw-semibold" (click)="closeEdit()">Cancel</button>
-          <button class="btn btn-primary rounded-pill px-4 fw-bold" (click)="onSaveEdit()" [disabled]="editLoading || !editName.trim()">
+        <div class="modal-footer border-top-0 pt-0 px-3 px-md-4 pb-3 pb-md-4">
+          <button class="btn btn-light rounded-pill px-3 px-md-4 py-1 py-md-2 fw-semibold" (click)="closeEdit()">Cancel</button>
+          <button class="btn btn-primary rounded-pill px-3 px-md-4 py-1 py-md-2 fw-bold" (click)="onSaveEdit()" [disabled]="editLoading || !editName.trim()">
             @if (editLoading) { <span class="spinner-border spinner-border-sm me-2"></span> }
             Save Changes
           </button>

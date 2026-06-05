@@ -56,3 +56,74 @@ body {
 .username-smallcaps {
   font-variant: small-caps;
 }
+
+/* ============================================
+   Dark Mode Overrides
+   ============================================ */
+[data-bs-theme="dark"] {
+  --bs-body-bg: #0f172a;
+  --bs-primary: #38bdf8;
+  --bs-primary-rgb: 56, 189, 248;
+}
+
+[data-bs-theme="dark"] body {
+  color: #e2e8f0;
+}
+
+[data-bs-theme="dark"] .bg-primary-theme {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
+}
+
+[data-bs-theme="dark"] .card {
+  background-color: #1e293b;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+[data-bs-theme="dark"] .card-hover:hover {
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+}
+
+[data-bs-theme="dark"] .text-dark {
+  color: #f8fafc !important;
+}
+
+[data-bs-theme="dark"] .text-muted {
+  color: #94a3b8 !important;
+}
+
+[data-bs-theme="dark"] .bg-white {
+  background-color: #1e293b !important;
+}
+
+[data-bs-theme="dark"] .bg-light {
+  background-color: #334155 !important;
+}
+
+[data-bs-theme="dark"] .table-light {
+  background-color: #334155;
+  color: #f8fafc;
+}
+
+[data-bs-theme="dark"] .border-light {
+  border-color: #334155 !important;
+}
+
+[data-bs-theme="dark"] .btn-primary {
+  background-color: #38bdf8;
+  border-color: #38bdf8;
+  color: #0f172a;
+}
+[data-bs-theme="dark"] .btn-primary:hover {
+  background-color: #0ea5e9;
+  border-color: #0ea5e9;
+  color: #0f172a;
+}
+
+[data-bs-theme="dark"] .btn-outline-primary {
+  color: #38bdf8;
+  border-color: #38bdf8;
+}
+[data-bs-theme="dark"] .btn-outline-primary:hover {
+  background-color: #38bdf8;
+  color: #0f172a;
+}

@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet, RouterLink } from '@angular/router';
 import { AuthService } from './services/auth.service';
+import { ThemeService } from './services/theme.service';
 
 @Component({
   selector: 'app-root',
@@ -11,7 +12,7 @@ import { AuthService } from './services/auth.service';
   styleUrl: './app.css',
 })
 export class App {
-  constructor(public auth: AuthService) {}
+  constructor(public auth: AuthService, public themeService: ThemeService) {}
 
   logout(): void {
     this.auth.logout();

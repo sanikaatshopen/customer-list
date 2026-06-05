@@ -17,6 +17,9 @@
 
       <!-- Desktop user controls (hidden on small screens) -->
       <div class="ms-auto d-none d-lg-flex align-items-center">
+        <button class="btn btn-sm btn-link text-white text-decoration-none me-3 fs-5" (click)="themeService.toggleTheme()" title="Toggle Theme">
+          <i class="bi" [class.bi-moon-fill]="!themeService.isDarkMode" [class.bi-sun-fill]="themeService.isDarkMode"></i>
+        </button>
         <span class="text-light me-3">
           Hello, <strong class="text-white">{{ auth.getFullname() | titlecase }}</strong>
         </span>
@@ -38,6 +41,12 @@
         <p class="text-muted mb-1">Logged in as:</p>
         <h5 class="fw-bold mb-0 text-dark">{{ auth.getFullname() | titlecase }}</h5>
         <small class="text-muted text-lowercase">@{{ auth.getUsername() | lowercase }}</small>
+      </div>
+      <div class="mb-4">
+        <button class="btn btn-outline-secondary w-100 fw-semibold text-start" (click)="themeService.toggleTheme()">
+          <i class="bi me-2" [class.bi-moon-fill]="!themeService.isDarkMode" [class.bi-sun-fill]="themeService.isDarkMode"></i>
+          Toggle Dark Mode
+        </button>
       </div>
       <div class="mt-auto">
         <button class="btn btn-outline-danger w-100 fw-semibold" (click)="logout()" data-bs-dismiss="offcanvas">

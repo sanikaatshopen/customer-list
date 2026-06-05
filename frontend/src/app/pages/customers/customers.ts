@@ -57,7 +57,8 @@ export class CustomersComponent implements OnInit {
         name: customer.name,
         emails: customer.emails,
         phones: customer.phones,
-        isFavorite: customer.isFavorite
+        isFavorite: customer.isFavorite,
+        bdate: customer.bdate
       })
       .subscribe({
         next: (updated) => {
@@ -75,6 +76,7 @@ export class CustomersComponent implements OnInit {
 
   // ── Add form fields ────────────────────
   newName = '';
+  newBdate = '';
   newEmails: ContactEntity[] = [{ type: 'personal', value: '' }];
   newPhones: ContactEntity[] = [{ type: 'mobile', value: '' }];
   newEmailErrors: string[] = [''];
@@ -86,6 +88,7 @@ export class CustomersComponent implements OnInit {
   // ── Edit modal fields ──────────────────
   editCustomer: Customer | null = null;
   editName = '';
+  editBdate = '';
   editEmails: ContactEntity[] = [];
   editPhones: ContactEntity[] = [];
   editEmailErrors: string[] = [];
@@ -171,6 +174,18 @@ export class CustomersComponent implements OnInit {
       return;
     }
 
+    const validNewEmails = this.newEmails.filter(e => e.value.trim());
+    if (validNewEmails.length === 0) {
+      this.addError = 'At least one email address is required.';
+      return;
+    }
+
+    const validNewPhones = this.newPhones.filter(p => p.value.trim());
+    if (validNewPhones.length === 0) {
+      this.addError = 'At least one phone number is required.';
+      return;
+    }
+
     this.validatePhones('new');
     this.validateEmails('new');
 
@@ -185,11 +200,13 @@ export class CustomersComponent implements OnInit {
         name: this.newName.trim(),
         emails: this.newEmails.filter(e => e.value.trim()).map(e => ({ type: e.type, value: e.value.trim() })),
         phones: this.newPhones.filter(p => p.value.trim()).map(p => ({ type: p.type, value: p.value.trim() })),
+        bdate: this.newBdate,
       })
       .subscribe({
         next: (customer) => {
           this.customers.unshift(customer); // Add to top of list
           this.newName = '';
+          this.newBdate = '';
           this.newEmails = [{ type: 'personal', value: '' }];
           this.newPhones = [{ type: 'mobile', value: '' }];
           this.newEmailErrors = [''];
@@ -211,6 +228,7 @@ export class CustomersComponent implements OnInit {
   openEdit(customer: Customer): void {
     this.editCustomer = customer;
     this.editName = customer.name;
+    this.editBdate = customer.bdate || '';
     this.editEmails = customer.emails?.length ? customer.emails.map(e => ({ type: e.type || 'personal', value: e.value })) : [{ type: 'personal', value: '' }];
     this.editPhones = customer.phones?.length ? customer.phones.map(p => ({ type: p.type || 'mobile', value: p.value })) : [{ type: 'mobile', value: '' }];
     this.editEmailErrors = new Array(this.editEmails.length).fill('');
@@ -229,6 +247,18 @@ export class CustomersComponent implements OnInit {
       return;
     }
 
+    const validEditEmails = this.editEmails.filter(e => e.value.trim());
+    if (validEditEmails.length === 0) {
+      this.editError = 'At least one email address is required.';
+      return;
+    }
+
+    const validEditPhones = this.editPhones.filter(p => p.value.trim());
+    if (validEditPhones.length === 0) {
+      this.editError = 'At least one phone number is required.';
+      return;
+    }
+
     this.validatePhones('edit');
     this.validateEmails('edit');
 
@@ -243,6 +273,7 @@ export class CustomersComponent implements OnInit {
         name: this.editName.trim(),
         emails: this.editEmails.filter(e => e.value.trim()).map(e => ({ type: e.type, value: e.value.trim() })),
         phones: this.editPhones.filter(p => p.value.trim()).map(p => ({ type: p.type, value: p.value.trim() })),
+        bdate: this.editBdate,
       })
       .subscribe({
         next: (updated) => {
@@ -375,6 +406,14 @@ export class CustomersComponent implements OnInit {
 
   isAllSelected(): boolean {
     return this.customers.length > 0 && this.selectedIds.size === this.customers.length;
+  }
+
+  isBirthdayToday(bdate?: string): boolean {
+    if (!bdate) return false;
+    const today = new Date();
+    const [year, month, day] = bdate.split('-');
+    if (!month || !day) return false;
+    return today.getMonth() + 1 === parseInt(month, 10) && today.getDate() === parseInt(day, 10);
   }
 
   // ── Bulk Download CSV ────────────────────

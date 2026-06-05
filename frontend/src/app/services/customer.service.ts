@@ -25,6 +25,7 @@ export interface Customer {
   phone?: string;
   emails: ContactEntity[];
   phones: ContactEntity[];
+  bdate?: string;
   isFavorite?: boolean;
   createdAt: string;
   updatedAt: string;
@@ -51,14 +52,14 @@ export class CustomerService {
   }
 
   // ── Add a new customer ─────────────────
-  addCustomer(data: { name: string; emails: ContactEntity[]; phones: ContactEntity[]; isFavorite?: boolean }): Observable<Customer> {
+  addCustomer(data: { name: string; emails: ContactEntity[]; phones: ContactEntity[]; isFavorite?: boolean; bdate?: string }): Observable<Customer> {
     return this.http.post<Customer>(this.API_URL, data, {
       headers: this.getHeaders(),
     });
   }
 
   // ── Update a customer ──────────────────
-  updateCustomer(id: string, data: { name: string; emails: ContactEntity[]; phones: ContactEntity[]; isFavorite?: boolean }): Observable<Customer> {
+  updateCustomer(id: string, data: { name: string; emails: ContactEntity[]; phones: ContactEntity[]; isFavorite?: boolean; bdate?: string }): Observable<Customer> {
     return this.http.put<Customer>(`${this.API_URL}/${id}`, data, {
       headers: this.getHeaders(),
     });

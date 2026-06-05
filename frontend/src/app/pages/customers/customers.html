@@ -101,13 +101,18 @@
                 </thead>
                 <tbody>
                   @for (customer of list; track customer._id; let i = $index) {
-                  <tr [class.table-primary]="selectedIds.has(customer._id)">
+                  <tr [class.table-primary]="selectedIds.has(customer._id)" [class.birthday-row]="!selectedIds.has(customer._id) && isBirthdayToday(customer.bdate)">
                     <td class="ps-4">
                       <input class="form-check-input" type="checkbox" [checked]="selectedIds.has(customer._id)" (change)="toggleSelection(customer._id)">
                     </td>
                     <td class="text-muted">{{ i + 1 }}</td>
                     <td class="fw-bold text-dark">
                       {{ customer.name }}
+                      @if (isBirthdayToday(customer.bdate)) {
+                        <span class="badge rounded-pill birthday-badge ms-2 py-1 px-2">
+                          <span style="font-size: 1.1em;">🎂</span> Birthday
+                        </span>
+                      }
                     </td>
                     <td>
                       @if (customer.emails && customer.emails.length > 0) {
@@ -161,13 +166,18 @@
               <div class="row gx-0">
                 @for (customer of list; track customer._id; let i = $index) {
                 <div class="col-12 mb-3">
-                  <div class="card card-hover border-0 shadow-sm" style="border-left: 4px solid var(--bs-primary) !important;">
+                  <div class="card card-hover shadow-sm" [class.border-0]="!isBirthdayToday(customer.bdate)" [class.birthday-card]="isBirthdayToday(customer.bdate)" [style.border-left]="!isBirthdayToday(customer.bdate) ? '4px solid var(--bs-primary)' : ''">
                     <div class="card-body">
                       <div class="d-flex justify-content-between align-items-center mb-2">
                         <div class="d-flex align-items-center gap-2">
                           <input class="form-check-input mt-0" type="checkbox" [checked]="selectedIds.has(customer._id)" (change)="toggleSelection(customer._id)">
-                          <h5 class="card-title mb-0 fw-bold text-dark">
+                          <h5 class="card-title mb-0 fw-bold text-dark d-flex align-items-center flex-wrap gap-2">
                             {{ customer.name }}
+                            @if (isBirthdayToday(customer.bdate)) {
+                              <span class="badge rounded-pill birthday-badge py-1 px-2">
+                                <span style="font-size: 1.1em;">🎂</span> Birthday
+                              </span>
+                            }
                           </h5>
                         </div>
                         <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2 py-1">#{{ i + 1 }}</span>
@@ -258,7 +268,12 @@
             </div>
             
             <div class="mb-2 mb-md-3">
-              <label class="form-label fw-semibold">Email(s)</label>
+              <label for="newBdate" class="form-label fw-semibold">Birthdate</label>
+              <input type="date" class="form-control bg-light border-0 py-1 py-md-2" id="newBdate" [(ngModel)]="newBdate" name="newBdate" />
+            </div>
+            
+            <div class="mb-2 mb-md-3">
+              <label class="form-label fw-semibold">Email(s) *</label>
               @for (email of newEmails; track $index; let i = $index) {
                 <div class="d-flex mb-2">
                   <select class="form-select bg-light border-0 me-2 py-1 py-md-2" style="width: auto;" [(ngModel)]="newEmails[i].type" name="newEmailType_{{i}}">
@@ -282,7 +297,7 @@
             </div>
             
             <div class="mb-3 mb-md-4">
-              <label class="form-label fw-semibold">Phone(s) (10 digits)</label>
+              <label class="form-label fw-semibold">Phone(s) (10 digits) *</label>
               @for (phone of newPhones; track $index; let i = $index) {
                 <div class="d-flex mb-2">
                   <select class="form-select bg-light border-0 me-2 py-1 py-md-2" style="width: auto;" [(ngModel)]="newPhones[i].type" name="newPhoneType_{{i}}">
@@ -340,7 +355,12 @@
           </div>
           
           <div class="mb-2 mb-md-3">
-            <label class="form-label fw-semibold">Email(s)</label>
+            <label for="editBdate" class="form-label fw-semibold">Birthdate</label>
+            <input type="date" class="form-control bg-light border-0 py-1 py-md-2" id="editBdate" [(ngModel)]="editBdate" name="editBdate" />
+          </div>
+          
+          <div class="mb-2 mb-md-3">
+            <label class="form-label fw-semibold">Email(s) *</label>
             @for (email of editEmails; track $index; let i = $index) {
               <div class="d-flex mb-2">
                 <select class="form-select bg-light border-0 me-2 py-1 py-md-2" style="width: auto;" [(ngModel)]="editEmails[i].type" name="editEmailType_{{i}}">
@@ -364,7 +384,7 @@
           </div>
           
           <div class="mb-3 mb-md-4">
-            <label class="form-label fw-semibold">Phone(s) (10 digits)</label>
+            <label class="form-label fw-semibold">Phone(s) (10 digits) *</label>
             @for (phone of editPhones; track $index; let i = $index) {
               <div class="d-flex mb-2">
                 <select class="form-select bg-light border-0 me-2 py-1 py-md-2" style="width: auto;" [(ngModel)]="editPhones[i].type" name="editPhoneType_{{i}}">

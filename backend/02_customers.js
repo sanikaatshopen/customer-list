@@ -39,6 +39,7 @@ const customerSchema = new mongoose.Schema(
       value: { type: String, trim: true }
     }],
     isFavorite: { type: Boolean, default: false },
+    bdate: { type: String, default: '' },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
@@ -151,10 +152,18 @@ router.get('/', async (req, res) => {
 // ──────────────────────────────────────────────
 router.post('/', async (req, res) => {
   try {
-    const { name, emails, phones, isFavorite } = req.body;
+    const { name, emails, phones, isFavorite, bdate } = req.body;
 
     if (!name) {
       return res.status(400).json({ message: 'Customer name is required.' });
+    }
+
+    if (!emails || !Array.isArray(emails) || emails.filter(e => e.value && e.value.trim() !== '').length === 0) {
+      return res.status(400).json({ message: 'At least one email address is required.' });
+    }
+
+    if (!phones || !Array.isArray(phones) || phones.filter(p => p.value && p.value.trim() !== '').length === 0) {
+      return res.status(400).json({ message: 'At least one phone number is required.' });
     }
 
     if (phones && Array.isArray(phones)) {
@@ -197,6 +206,7 @@ router.post('/', async (req, res) => {
       emails: emails || [],
       phones: phones || [],
       isFavorite: isFavorite || false,
+      bdate: bdate || '',
       createdBy: req.userId,
     });
 
@@ -244,7 +254,19 @@ router.post('/', async (req, res) => {
 // ──────────────────────────────────────────────
 router.put('/:id', async (req, res) => {
   try {
-    const { name, emails, phones, isFavorite } = req.body;
+    const { name, emails, phones, isFavorite, bdate } = req.body;
+
+    if (!name) {
+      return res.status(400).json({ message: 'Customer name is required.' });
+    }
+
+    if (!emails || !Array.isArray(emails) || emails.filter(e => e.value && e.value.trim() !== '').length === 0) {
+      return res.status(400).json({ message: 'At least one email address is required.' });
+    }
+
+    if (!phones || !Array.isArray(phones) || phones.filter(p => p.value && p.value.trim() !== '').length === 0) {
+      return res.status(400).json({ message: 'At least one phone number is required.' });
+    }
 
     if (phones && Array.isArray(phones)) {
       for (const p of phones) {
@@ -288,7 +310,8 @@ router.put('/:id', async (req, res) => {
         phone: primaryPhone, 
         emails: emails || [], 
         phones: phones || [],
-        ...(isFavorite !== undefined && { isFavorite })
+        ...(isFavorite !== undefined && { isFavorite }),
+        bdate: bdate || ''
       },
       { new: true } // Return the updated document
     );

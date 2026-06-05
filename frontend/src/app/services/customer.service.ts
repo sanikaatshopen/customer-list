@@ -11,12 +11,21 @@ import { Observable } from 'rxjs';
 import { AuthService } from './auth.service';
 import { environment } from '../../environments/environment';
 
+// Contact entity interface for emails and phones
+export interface ContactEntity {
+  type: string;
+  value: string;
+}
+
 // Customer interface — matches the backend model
 export interface Customer {
   _id: string;
   name: string;
-  email: string;
-  phone: string;
+  email?: string;
+  phone?: string;
+  emails: ContactEntity[];
+  phones: ContactEntity[];
+  isFavorite?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -42,14 +51,14 @@ export class CustomerService {
   }
 
   // ── Add a new customer ─────────────────
-  addCustomer(data: { name: string; email: string; phone: string }): Observable<Customer> {
+  addCustomer(data: { name: string; emails: ContactEntity[]; phones: ContactEntity[]; isFavorite?: boolean }): Observable<Customer> {
     return this.http.post<Customer>(this.API_URL, data, {
       headers: this.getHeaders(),
     });
   }
 
   // ── Update a customer ──────────────────
-  updateCustomer(id: string, data: { name: string; email: string; phone: string }): Observable<Customer> {
+  updateCustomer(id: string, data: { name: string; emails: ContactEntity[]; phones: ContactEntity[]; isFavorite?: boolean }): Observable<Customer> {
     return this.http.put<Customer>(`${this.API_URL}/${id}`, data, {
       headers: this.getHeaders(),
     });

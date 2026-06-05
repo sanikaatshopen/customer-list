@@ -30,6 +30,15 @@ const customerSchema = new mongoose.Schema(
     name: { type: String, required: true, trim: true },
     email: { type: String, trim: true, default: '' },
     phone: { type: String, trim: true, default: '' },
+    emails: [{
+      type: { type: String, default: 'personal' },
+      value: { type: String, trim: true }
+    }],
+    phones: [{
+      type: { type: String, default: 'mobile' },
+      value: { type: String, trim: true }
+    }],
+    isFavorite: { type: Boolean, default: false },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
@@ -79,7 +88,26 @@ router.get('/', async (req, res) => {
     const customers = await Customer.find({ createdBy: req.userId }).sort({
       createdAt: -1,
     });
-    res.json(customers);
+    const mappedCustomers = customers.map(c => {
+      const doc = c.toObject();
+      if (!doc.emails) doc.emails = [];
+      if (!doc.phones) doc.phones = [];
+
+      // Map existing single email/phone to the new arrays for backwards compatibility
+      // Also map string arrays to object arrays if they were saved in the old format
+      if (doc.emails && doc.emails.length > 0 && typeof doc.emails[0] === 'string') {
+        doc.emails = doc.emails.map(e => ({ type: 'personal', value: e }));
+      }
+      if (doc.phones && doc.phones.length > 0 && typeof doc.phones[0] === 'string') {
+        doc.phones = doc.phones.map(p => ({ type: 'mobile', value: p }));
+      }
+      
+      if (doc.email && doc.emails.length === 0) doc.emails.push({ type: 'personal', value: doc.email });
+      if (doc.phone && doc.phones.length === 0) doc.phones.push({ type: 'mobile', value: doc.phone });
+      return doc;
+    });
+    
+    res.json(mappedCustomers);
   } catch (err) {
     res.status(500).json({ message: 'Failed to fetch customers.' });
   }
@@ -123,18 +151,43 @@ router.get('/', async (req, res) => {
 // ──────────────────────────────────────────────
 router.post('/', async (req, res) => {
   try {
-    const { name, email, phone } = req.body;
+    const { name, emails, phones, isFavorite } = req.body;
 
     if (!name) {
       return res.status(400).json({ message: 'Customer name is required.' });
     }
 
-    if (phone && !/^\d{10}$/.test(phone.trim())) {
-      return res.status(400).json({ message: 'Phone number must be exactly 10 digits.' });
+    if (phones && Array.isArray(phones)) {
+      for (const p of phones) {
+        if (p.value && !/^\d{10}$/.test(p.value.trim())) {
+          return res.status(400).json({ message: 'Each phone number must be exactly 10 digits.' });
+        }
+      }
     }
 
-    if (email && !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email.trim())) {
-      return res.status(400).json({ message: 'Please enter a valid email address.' });
+    if (emails && Array.isArray(emails)) {
+      for (const e of emails) {
+        if (e.value && !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(e.value.trim())) {
+          return res.status(400).json({ message: 'Please enter valid email addresses.' });
+        }
+      }
+    }
+
+    const primaryEmail = emails && emails.length > 0 ? emails[0].value.trim() : '';
+    const primaryPhone = phones && phones.length > 0 ? phones[0].value.trim() : '';
+
+    if (primaryEmail) {
+      const existingEmail = await Customer.findOne({ email: primaryEmail, createdBy: req.userId });
+      if (existingEmail) {
+        return res.status(400).json({ message: 'A customer with this email ID already exists.' });
+      }
+    }
+
+    if (primaryPhone) {
+      const existingPhone = await Customer.findOne({ phone: primaryPhone, createdBy: req.userId });
+      if (existingPhone) {
+        return res.status(400).json({ message: 'A customer with this phone number already exists.' });
+      }
     }
 
     if (email) {
@@ -153,8 +206,11 @@ router.post('/', async (req, res) => {
 
     const customer = new Customer({
       name,
-      email: email ? email.trim() : '',
-      phone: phone ? phone.trim() : '',
+      email: primaryEmail,
+      phone: primaryPhone,
+      emails: emails || [],
+      phones: phones || [],
+      isFavorite: isFavorite || false,
       createdBy: req.userId,
     });
 
@@ -202,14 +258,39 @@ router.post('/', async (req, res) => {
 // ──────────────────────────────────────────────
 router.put('/:id', async (req, res) => {
   try {
-    const { name, email, phone } = req.body;
+    const { name, emails, phones, isFavorite } = req.body;
 
-    if (phone && !/^\d{10}$/.test(phone.trim())) {
-      return res.status(400).json({ message: 'Phone number must be exactly 10 digits.' });
+    if (phones && Array.isArray(phones)) {
+      for (const p of phones) {
+        if (p.value && !/^\d{10}$/.test(p.value.trim())) {
+          return res.status(400).json({ message: 'Each phone number must be exactly 10 digits.' });
+        }
+      }
     }
 
-    if (email && !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email.trim())) {
-      return res.status(400).json({ message: 'Please enter a valid email address.' });
+    if (emails && Array.isArray(emails)) {
+      for (const e of emails) {
+        if (e.value && !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(e.value.trim())) {
+          return res.status(400).json({ message: 'Please enter valid email addresses.' });
+        }
+      }
+    }
+
+    const primaryEmail = emails && emails.length > 0 ? emails[0].value.trim() : '';
+    const primaryPhone = phones && phones.length > 0 ? phones[0].value.trim() : '';
+
+    if (primaryEmail) {
+      const existingEmail = await Customer.findOne({ email: primaryEmail, createdBy: req.userId, _id: { $ne: req.params.id } });
+      if (existingEmail) {
+        return res.status(400).json({ message: 'A customer with this email ID already exists.' });
+      }
+    }
+
+    if (primaryPhone) {
+      const existingPhone = await Customer.findOne({ phone: primaryPhone, createdBy: req.userId, _id: { $ne: req.params.id } });
+      if (existingPhone) {
+        return res.status(400).json({ message: 'A customer with this phone number already exists.' });
+      }
     }
 
     if (email) {
@@ -229,7 +310,14 @@ router.put('/:id', async (req, res) => {
     // Find the customer AND check ownership in one query
     const customer = await Customer.findOneAndUpdate(
       { _id: req.params.id, createdBy: req.userId },
-      { name, email: email ? email.trim() : '', phone: phone ? phone.trim() : '' },
+      { 
+        name, 
+        email: primaryEmail, 
+        phone: primaryPhone, 
+        emails: emails || [], 
+        phones: phones || [],
+        ...(isFavorite !== undefined && { isFavorite })
+      },
       { new: true } // Return the updated document
     );
 

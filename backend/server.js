@@ -24,7 +24,7 @@ const app = express();
 
 // ── Middleware ──────────────────────────────
 app.use(cors()); // Allow requests from Angular dev server
-app.use(express.json()); // Parse JSON request bodies
+app.use(express.json({ limit: '10mb' })); // Parse JSON request bodies with larger limit for base64 images
 
 // ── Routes ─────────────────────────────────
 //  Each route file handles one feature area.

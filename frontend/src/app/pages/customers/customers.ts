@@ -81,6 +81,7 @@ export class CustomersComponent implements OnInit {
   newPhones: ContactEntity[] = [{ type: 'mobile', value: '' }];
   newEmailErrors: string[] = [''];
   newPhoneErrors: string[] = [''];
+  newPhotoUrl = '';
   addLoading = false;
   addError = '';
   addSuccess = '';
@@ -93,6 +94,7 @@ export class CustomersComponent implements OnInit {
   editPhones: ContactEntity[] = [];
   editEmailErrors: string[] = [];
   editPhoneErrors: string[] = [];
+  editPhotoUrl = '';
   editLoading = false;
   editError = '';
 
@@ -210,6 +212,7 @@ export class CustomersComponent implements OnInit {
         emails: this.newEmails.filter(e => e.value.trim()).map(e => ({ type: e.type, value: e.value.trim() })),
         phones: this.newPhones.filter(p => p.value.trim()).map(p => ({ type: p.type, value: p.value.trim() })),
         bdate: this.newBdate,
+        photoUrl: this.newPhotoUrl,
       })
       .subscribe({
         next: (customer) => {
@@ -220,6 +223,7 @@ export class CustomersComponent implements OnInit {
           this.newPhones = [{ type: 'mobile', value: '' }];
           this.newEmailErrors = [''];
           this.newPhoneErrors = [''];
+          this.newPhotoUrl = '';
           this.addLoading = false;
           this.showAddModal = false; // Close modal on success
           this.addSuccess = `"${customer.name}" added successfully!`;
@@ -242,6 +246,7 @@ export class CustomersComponent implements OnInit {
     this.editPhones = customer.phones?.length ? customer.phones.map(p => ({ type: p.type || 'mobile', value: p.value })) : [{ type: 'mobile', value: '' }];
     this.editEmailErrors = new Array(this.editEmails.length).fill('');
     this.editPhoneErrors = new Array(this.editPhones.length).fill('');
+    this.editPhotoUrl = customer.photoUrl || '';
     this.editError = '';
   }
 
@@ -283,6 +288,7 @@ export class CustomersComponent implements OnInit {
         emails: this.editEmails.filter(e => e.value.trim()).map(e => ({ type: e.type, value: e.value.trim() })),
         phones: this.editPhones.filter(p => p.value.trim()).map(p => ({ type: p.type, value: p.value.trim() })),
         bdate: this.editBdate,
+        photoUrl: this.editPhotoUrl,
       })
       .subscribe({
         next: (updated) => {
@@ -307,6 +313,7 @@ export class CustomersComponent implements OnInit {
   // ── Close edit modal ───────────────────
   closeEdit(): void {
     this.editCustomer = null;
+    this.editPhotoUrl = '';
   }
 
   // ── Open delete confirmation ───────────
@@ -392,6 +399,32 @@ export class CustomersComponent implements OnInit {
       this.newPhoneErrors = errors;
     } else {
       this.editPhoneErrors = errors;
+    }
+  }
+
+  // ── Photo Selection ─────────────────────
+  onPhotoSelected(event: Event, mode: 'new' | 'edit'): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      const file = input.files[0];
+      
+      // Check file size (e.g., limit to 5MB for frontend check)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('File is too large. Please select an image under 5MB.');
+        input.value = '';
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const base64Url = e.target?.result as string;
+        if (mode === 'new') {
+          this.newPhotoUrl = base64Url;
+        } else {
+          this.editPhotoUrl = base64Url;
+        }
+      };
+      reader.readAsDataURL(file);
     }
   }
 

@@ -40,6 +40,7 @@ const customerSchema = new mongoose.Schema(
     }],
     isFavorite: { type: Boolean, default: false },
     bdate: { type: String, default: '' },
+    photoUrl: { type: String, default: '' },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
@@ -152,7 +153,7 @@ router.get('/', async (req, res) => {
 // ──────────────────────────────────────────────
 router.post('/', async (req, res) => {
   try {
-    const { name, emails, phones, isFavorite, bdate } = req.body;
+    const { name, emails, phones, isFavorite, bdate, photoUrl } = req.body;
 
     if (!name) {
       return res.status(400).json({ message: 'Customer name is required.' });
@@ -207,6 +208,7 @@ router.post('/', async (req, res) => {
       phones: phones || [],
       isFavorite: isFavorite || false,
       bdate: bdate || '',
+      photoUrl: photoUrl || '',
       createdBy: req.userId,
     });
 
@@ -418,7 +420,7 @@ router.post('/bulk', async (req, res) => {
 // ──────────────────────────────────────────────
 router.put('/:id', async (req, res) => {
   try {
-    const { name, emails, phones, isFavorite, bdate } = req.body;
+    const { name, emails, phones, isFavorite, bdate, photoUrl } = req.body;
 
     if (!name) {
       return res.status(400).json({ message: 'Customer name is required.' });
@@ -475,7 +477,8 @@ router.put('/:id', async (req, res) => {
         emails: emails || [], 
         phones: phones || [],
         ...(isFavorite !== undefined && { isFavorite }),
-        bdate: bdate || ''
+        bdate: bdate || '',
+        ...(photoUrl !== undefined && { photoUrl })
       },
       { new: true } // Return the updated document
     );

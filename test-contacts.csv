@@ -1,0 +1,6 @@
+Name,Email,Phone,Birthdate,Favorite
+Alice Anderson,alice@example.com,1234567890,1990-05-15,Yes
+Bob Builder,bob@example.com,0987654321,1985-08-20,No
+Charlie Chaplin,charlie@example.com,1112223333,1889-04-16,No
+David Davidson,david@example.com,4445556666,,Yes
+Eve Example,eve@example.com,7778889999,1995-12-01,No

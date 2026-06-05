@@ -218,6 +218,170 @@ router.post('/', async (req, res) => {
 });
 
 // ──────────────────────────────────────────────
+//  POST /customers/bulk
+// ──────────────────────────────────────────────
+//  Creates multiple customers simultaneously.
+// ──────────────────────────────────────────────
+router.post('/bulk', async (req, res) => {
+  try {
+    const { customers } = req.body;
+    if (!customers || !Array.isArray(customers) || customers.length === 0) {
+      return res.status(400).json({ message: 'No customers provided for bulk import.' });
+    }
+
+    const parsedCustomers = [];
+    const incomingEmails = [];
+    const incomingPhones = [];
+    let skippedInvalid = 0;
+    const skippedInvalidNames = [];
+
+    for (const c of customers) {
+      const { name, email, phone, bdate, isFavorite } = c;
+      if (!name) {
+        skippedInvalid++;
+        skippedInvalidNames.push('Unknown');
+        continue;
+      }
+
+      let emails = [];
+      let phones = [];
+      let primaryEmail = '';
+      let primaryPhone = '';
+      
+      let cleanEmail = email ? email.toString().trim() : '';
+      let isEmailInvalid = false;
+      if (cleanEmail) {
+        if (/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(cleanEmail)) {
+          emails.push({ type: 'personal', value: cleanEmail });
+          primaryEmail = cleanEmail;
+          incomingEmails.push(cleanEmail);
+        } else {
+          isEmailInvalid = true;
+        }
+      }
+
+      let cleanPhone = phone ? phone.toString().trim() : '';
+      let isPhoneInvalid = false;
+      if (cleanPhone) {
+        const digitsOnly = cleanPhone.replace(/\D/g, ''); // Extract only digits for validation
+        if (/^\d{10}$/.test(digitsOnly)) {
+          phones.push({ type: 'mobile', value: digitsOnly });
+          primaryPhone = digitsOnly;
+          incomingPhones.push(digitsOnly);
+        } else {
+          isPhoneInvalid = true;
+        }
+      }
+
+      if (isEmailInvalid || isPhoneInvalid) {
+        skippedInvalid++;
+        skippedInvalidNames.push(name.toString().trim());
+        continue;
+      }
+
+      parsedCustomers.push({
+        name: name.toString().trim(),
+        email: primaryEmail,
+        phone: primaryPhone,
+        emails,
+        phones,
+        isFavorite: isFavorite === 'true' || isFavorite === true,
+        bdate: bdate ? bdate.toString().trim() : '',
+        createdBy: req.userId
+      });
+    }
+
+    // Query the database for existing duplicates
+    const existingEmails = new Set();
+    const existingPhones = new Set();
+    
+    const query = [];
+    if (incomingEmails.length > 0) {
+      query.push({ email: { $in: incomingEmails } });
+    }
+    if (incomingPhones.length > 0) {
+      query.push({ phone: { $in: incomingPhones } });
+    }
+
+    if (query.length > 0) {
+      const existingCustomers = await Customer.find({
+        createdBy: req.userId,
+        $or: query
+      }).select('email phone');
+
+      for (const ex of existingCustomers) {
+        if (ex.email) existingEmails.add(ex.email);
+        if (ex.phone) existingPhones.add(ex.phone);
+      }
+    }
+
+    const validCustomers = [];
+    let skippedDuplicates = 0;
+    const skippedDuplicateNames = [];
+    const batchEmails = new Set();
+    const batchPhones = new Set();
+
+    for (const c of parsedCustomers) {
+      let isDuplicate = false;
+      
+      if (c.email) {
+        if (existingEmails.has(c.email) || batchEmails.has(c.email)) {
+          isDuplicate = true;
+        } else {
+          batchEmails.add(c.email);
+        }
+      }
+      
+      if (c.phone && !isDuplicate) {
+        if (existingPhones.has(c.phone) || batchPhones.has(c.phone)) {
+          isDuplicate = true;
+        } else {
+          batchPhones.add(c.phone);
+        }
+      }
+
+      if (isDuplicate) {
+        skippedDuplicates++;
+        skippedDuplicateNames.push(c.name);
+      } else {
+        validCustomers.push(c);
+      }
+    }
+
+    if (validCustomers.length === 0) {
+      if (skippedDuplicates > 0) {
+        return res.status(400).json({ 
+          message: `No new customers were imported. Some records already exist.`,
+          imported: [],
+          skippedDuplicates: skippedDuplicateNames,
+          skippedInvalid: skippedInvalidNames
+        });
+      }
+      return res.status(400).json({ 
+        message: `No valid new customers found.`,
+        imported: [],
+        skippedDuplicates: skippedDuplicateNames,
+        skippedInvalid: skippedInvalidNames
+      });
+    }
+
+    const inserted = await Customer.insertMany(validCustomers);
+    const importedNames = inserted.map(c => c.name);
+    
+    let message = `Successfully imported ${inserted.length} customers.`;
+    
+    res.status(201).json({ 
+      message,
+      imported: importedNames,
+      skippedDuplicates: skippedDuplicateNames,
+      skippedInvalid: skippedInvalidNames
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to perform bulk import.' });
+  }
+});
+
+// ──────────────────────────────────────────────
 //  PUT /customers/:id
 // ──────────────────────────────────────────────
 //  Updates a customer. Only the owner can update.

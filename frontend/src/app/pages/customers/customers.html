@@ -14,6 +14,10 @@
           <i class="bi bi-trash3 me-1 me-md-2"></i><span class="d-none d-sm-inline">Delete Selected</span> ({{ selectedIds.size }})
         </button>
       }
+      <button class="btn btn-outline-info rounded-pill px-3 px-md-4 py-1 py-md-2 fw-semibold shadow-sm" (click)="fileInput.click()" title="Import CSV">
+        <i class="bi bi-upload me-1 me-md-2"></i><span class="d-none d-sm-inline">Import</span>
+      </button>
+      <input type="file" #fileInput accept=".csv" (change)="onImportFileChange($event)" style="display: none;">
       <button class="btn btn-primary rounded-pill px-3 px-md-4 py-1 py-md-2 fw-semibold shadow-sm" (click)="showAddModal = true">
         <i class="bi bi-plus-lg me-1 me-md-2 d-none d-sm-inline-block"></i><i class="bi bi-plus-lg d-inline-block d-sm-none"></i> <span class="d-none d-sm-inline">Add Customer</span><span class="d-inline d-sm-none">Add</span>
       </button>
@@ -467,6 +471,62 @@
         <div class="modal-footer border-top-0 d-flex justify-content-center pb-4">
           <button class="btn btn-light rounded-pill px-4 fw-semibold" (click)="cancelBulkDelete()">Cancel</button>
           <button class="btn btn-danger rounded-pill px-4 fw-bold" (click)="confirmBulkDelete()">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ════════════════════════════════════════════ -->
+<!--  IMPORT RESULT MODAL                         -->
+<!-- ════════════════════════════════════════════ -->
+@if (showImportResultModal) {
+  <div class="modal-backdrop show" (click)="showImportResultModal = false"></div>
+  <div class="modal d-block" tabindex="-1" (click)="showImportResultModal = false">
+    <div class="modal-dialog modal-dialog-centered" (click)="$event.stopPropagation()">
+      <div class="modal-content border-0 shadow-lg">
+        <div class="modal-header border-bottom-0">
+          <h5 class="modal-title fw-bold" [class.text-danger]="importResultIsError" [class.text-success]="!importResultIsError">
+            <i class="bi" [class.bi-exclamation-triangle-fill]="importResultIsError" [class.bi-check-circle-fill]="!importResultIsError" class="me-2"></i>
+            {{ importResultTitle }}
+          </h5>
+          <button type="button" class="btn-close" (click)="showImportResultModal = false"></button>
+        </div>
+        <div class="modal-body p-4 text-start">
+          <div class="text-center mb-3">
+            <i class="bi" [class.bi-exclamation-circle]="importResultIsError" [class.bi-info-circle]="!importResultIsError" [class.text-danger]="importResultIsError" [class.text-primary]="!importResultIsError" style="font-size: 3rem;"></i>
+            <p class="mb-0 fs-5 text-dark fw-semibold mt-2">{{ importResultMessage }}</p>
+          </div>
+          
+          @if (importResultImported.length > 0) {
+            <div class="mb-3">
+              <h6 class="text-success fw-bold"><i class="bi bi-check-circle me-1"></i> Successfully Imported ({{importResultImported.length}})</h6>
+              <div class="small text-muted bg-light p-2 rounded border" style="max-height: 100px; overflow-y: auto;">
+                {{ importResultImported.join(', ') }}
+              </div>
+            </div>
+          }
+
+          @if (importResultDuplicates.length > 0) {
+            <div class="mb-3">
+              <h6 class="text-warning fw-bold"><i class="bi bi-exclamation-triangle me-1"></i> Skipped: Already Exists ({{importResultDuplicates.length}})</h6>
+              <div class="small text-muted bg-light p-2 rounded border" style="max-height: 100px; overflow-y: auto;">
+                {{ importResultDuplicates.join(', ') }}
+              </div>
+            </div>
+          }
+
+          @if (importResultInvalids.length > 0) {
+            <div class="mb-3">
+              <h6 class="text-danger fw-bold"><i class="bi bi-x-circle me-1"></i> Skipped: Invalid Data ({{importResultInvalids.length}})</h6>
+              <div class="small text-muted bg-light p-2 rounded border" style="max-height: 100px; overflow-y: auto;">
+                {{ importResultInvalids.join(', ') }}
+              </div>
+            </div>
+          }
+        </div>
+        <div class="modal-footer border-top-0 d-flex justify-content-center pb-4">
+          <button class="btn rounded-pill px-5 fw-bold" [class.btn-danger]="importResultIsError" [class.btn-primary]="!importResultIsError" (click)="showImportResultModal = false">Close</button>
         </div>
       </div>
     </div>

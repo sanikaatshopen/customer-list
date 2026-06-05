@@ -78,4 +78,11 @@ export class CustomerService {
       headers: this.getHeaders(),
     });
   }
+
+  // ── Bulk import customers ──────────────
+  importCustomers(customers: any[]): Observable<any> {
+    return this.http.post(`${this.API_URL}/bulk`, { customers }, {
+      headers: this.getHeaders(),
+    });
+  }
 }

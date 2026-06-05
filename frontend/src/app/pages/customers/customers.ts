@@ -103,6 +103,15 @@ export class CustomersComponent implements OnInit {
   selectedIds: Set<string> = new Set<string>();
   showBulkDeleteModal = false;
 
+  // ── Import Modal ─────────────────────────
+  showImportResultModal = false;
+  importResultTitle = '';
+  importResultMessage = '';
+  importResultIsError = false;
+  importResultImported: string[] = [];
+  importResultDuplicates: string[] = [];
+  importResultInvalids: string[] = [];
+
   constructor(private customerService: CustomerService) {}
 
   ngOnInit(): void {
@@ -470,5 +479,123 @@ export class CustomersComponent implements OnInit {
         this.showBulkDeleteModal = false;
       },
     });
+  }
+
+  // ── CSV Bulk Import ──────────────────────
+  onImportFileChange(event: any): void {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e: any) => {
+      const text = e.target.result;
+      if (typeof text !== 'string') return;
+      
+      const lines = text.split(/\r?\n/).filter((line: string) => line.trim());
+      if (lines.length < 2) {
+        this.importResultTitle = 'Invalid File';
+        this.importResultMessage = 'CSV file is empty or missing headers.';
+        this.importResultIsError = true;
+        this.importResultImported = [];
+        this.importResultDuplicates = [];
+        this.importResultInvalids = [];
+        this.showImportResultModal = true;
+        event.target.value = '';
+        return;
+      }
+
+      const customersToImport: any[] = [];
+      
+      // Better CSV split handling quotes
+      const parseCsvLine = (line: string): string[] => {
+        const row: string[] = [];
+        let cur = '';
+        let inQuotes = false;
+        for (const char of line) {
+            if (char === '"') {
+                inQuotes = !inQuotes;
+            } else if (char === ',' && !inQuotes) {
+                row.push(cur.trim());
+                cur = '';
+            } else {
+                cur += char;
+            }
+        }
+        row.push(cur.trim());
+        return row;
+      };
+
+      const headers = parseCsvLine(lines[0]).map(h => h.toLowerCase());
+      
+      const nameIdx = headers.findIndex(h => h.includes('name'));
+      const emailIdx = headers.findIndex(h => h.includes('email'));
+      const phoneIdx = headers.findIndex(h => h.includes('phone'));
+      const bdateIdx = headers.findIndex(h => h.includes('birthdate') || h.includes('bdate'));
+      
+      if (nameIdx === -1) {
+        this.importResultTitle = 'Invalid Format';
+        this.importResultMessage = 'CSV must contain a "Name" column.';
+        this.importResultIsError = true;
+        this.importResultImported = [];
+        this.importResultDuplicates = [];
+        this.importResultInvalids = [];
+        this.showImportResultModal = true;
+        event.target.value = '';
+        return;
+      }
+
+      for (let i = 1; i < lines.length; i++) {
+        const row = parseCsvLine(lines[i]);
+        if (!row[nameIdx]) continue;
+        
+        customersToImport.push({
+          name: row[nameIdx],
+          email: emailIdx !== -1 ? row[emailIdx] : '',
+          phone: phoneIdx !== -1 ? row[phoneIdx] : '',
+          bdate: bdateIdx !== -1 ? row[bdateIdx] : ''
+        });
+      }
+
+      if (customersToImport.length === 0) {
+        this.importResultTitle = 'No Contacts';
+        this.importResultMessage = 'No valid contacts found to import.';
+        this.importResultIsError = true;
+        this.importResultImported = [];
+        this.importResultDuplicates = [];
+        this.importResultInvalids = [];
+        this.showImportResultModal = true;
+        event.target.value = '';
+        return;
+      }
+      
+      this.loading = true;
+      this.customerService.importCustomers(customersToImport).subscribe({
+        next: (res) => {
+          this.importResultTitle = 'Import Completed';
+          this.importResultMessage = res.message;
+          this.importResultIsError = false;
+          this.importResultImported = res.imported || [];
+          this.importResultDuplicates = res.skippedDuplicates || [];
+          this.importResultInvalids = res.skippedInvalid || [];
+          this.showImportResultModal = true;
+          this.loadCustomers();
+        },
+        error: (err) => {
+          this.loading = false;
+          this.importResultTitle = 'Import Failed';
+          this.importResultMessage = err.error?.message || 'Failed to import CSV.';
+          this.importResultIsError = true;
+          this.importResultImported = err.error?.imported || [];
+          this.importResultDuplicates = err.error?.skippedDuplicates || [];
+          this.importResultInvalids = err.error?.skippedInvalid || [];
+          this.showImportResultModal = true;
+        }
+      });
+      
+      // Reset file input
+      event.target.value = '';
+    };
+    
+    reader.readAsText(file);
   }
 }

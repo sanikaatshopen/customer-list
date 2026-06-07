@@ -112,6 +112,7 @@ export class CustomersComponent implements OnInit {
   importResultIsError = false;
   importResultImported: string[] = [];
   importResultDuplicates: string[] = [];
+  importResultMerged: string[] = [];
   importResultInvalids: string[] = [];
 
   constructor(private customerService: CustomerService) {}
@@ -182,6 +183,11 @@ export class CustomersComponent implements OnInit {
 
     if (!this.newName.trim()) {
       this.addError = 'Customer name is required.';
+      return;
+    }
+
+    if (!this.newBdate) {
+      this.addError = 'Birthdate is required.';
       return;
     }
 
@@ -258,6 +264,11 @@ export class CustomersComponent implements OnInit {
 
     if (!this.editName.trim()) {
       this.editError = 'Customer name is required.';
+      return;
+    }
+
+    if (!this.editBdate) {
+      this.editError = 'Birthdate is required.';
       return;
     }
 
@@ -464,13 +475,14 @@ export class CustomersComponent implements OnInit {
 
     const selectedCustomers = this.customers.filter(c => this.selectedIds.has(c._id));
     
-    const headers = ['Name', 'Emails', 'Phones', 'Favorite'];
+    const headers = ['Name', 'Emails', 'Phones', 'Favorite', 'Birthdate'];
     const rows = selectedCustomers.map(c => {
-      const emails = c.emails ? c.emails.map(e => e.value).join('; ') : '';
-      const phones = c.phones ? c.phones.map(p => p.value).join('; ') : '';
+      const emails = c.emails ? c.emails.map(e => `${e.value} (${e.type || 'personal'})`).join('; ') : '';
+      const phones = c.phones ? c.phones.map(p => `${p.value} (${p.type || 'mobile'})`).join('; ') : '';
       const isFavorite = c.isFavorite ? 'Yes' : 'No';
+      const bdate = c.bdate || '';
       
-      return `"${c.name.replace(/"/g, '""')}","${emails.replace(/"/g, '""')}","${phones.replace(/"/g, '""')}","${isFavorite}"`;
+      return `"${c.name.replace(/"/g, '""')}","${emails.replace(/"/g, '""')}","${phones.replace(/"/g, '""')}","${isFavorite}","${bdate}"`;
     });
     
     const csvContent = [headers.join(','), ...rows].join('\n');
@@ -581,10 +593,34 @@ export class CustomersComponent implements OnInit {
         const row = parseCsvLine(lines[i]);
         if (!row[nameIdx]) continue;
         
+        const emails: any[] = [];
+        if (emailIdx !== -1 && row[emailIdx]) {
+           const emailParts = row[emailIdx].split(/[;,]/);
+           emailParts.forEach(part => {
+             const m = part.trim().match(/^(.*?)(?:\s*\((.*?)\))?$/);
+             if (m && m[1]) {
+                emails.push({ value: m[1].trim(), type: m[2] ? m[2].trim() : 'personal' });
+             }
+           });
+        }
+        
+        const phones: any[] = [];
+        if (phoneIdx !== -1 && row[phoneIdx]) {
+           const phoneParts = row[phoneIdx].split(/[;,]/);
+           phoneParts.forEach(part => {
+             const m = part.trim().match(/^(.*?)(?:\s*\((.*?)\))?$/);
+             if (m && m[1]) {
+                phones.push({ value: m[1].trim(), type: m[2] ? m[2].trim() : 'mobile' });
+             }
+           });
+        }
+        
         customersToImport.push({
           name: row[nameIdx],
-          email: emailIdx !== -1 ? row[emailIdx] : '',
-          phone: phoneIdx !== -1 ? row[phoneIdx] : '',
+          email: emails.length > 0 ? emails[0].value : '',
+          phone: phones.length > 0 ? phones[0].value : '',
+          emails: emails,
+          phones: phones,
           bdate: bdateIdx !== -1 ? row[bdateIdx] : ''
         });
       }
@@ -595,6 +631,7 @@ export class CustomersComponent implements OnInit {
         this.importResultIsError = true;
         this.importResultImported = [];
         this.importResultDuplicates = [];
+        this.importResultMerged = [];
         this.importResultInvalids = [];
         this.showImportResultModal = true;
         event.target.value = '';
@@ -609,6 +646,7 @@ export class CustomersComponent implements OnInit {
           this.importResultIsError = false;
           this.importResultImported = res.imported || [];
           this.importResultDuplicates = res.skippedDuplicates || [];
+          this.importResultMerged = res.merged || [];
           this.importResultInvalids = res.skippedInvalid || [];
           this.showImportResultModal = true;
           this.loadCustomers();
@@ -620,6 +658,7 @@ export class CustomersComponent implements OnInit {
           this.importResultIsError = true;
           this.importResultImported = err.error?.imported || [];
           this.importResultDuplicates = err.error?.skippedDuplicates || [];
+          this.importResultMerged = err.error?.merged || [];
           this.importResultInvalids = err.error?.skippedInvalid || [];
           this.showImportResultModal = true;
         }

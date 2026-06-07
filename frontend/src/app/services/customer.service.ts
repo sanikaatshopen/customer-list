@@ -25,7 +25,9 @@ export interface Customer {
   phone?: string;
   emails: ContactEntity[];
   phones: ContactEntity[];
+  bdate?: string;
   isFavorite?: boolean;
+  photoUrl?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -51,14 +53,14 @@ export class CustomerService {
   }
 
   // ── Add a new customer ─────────────────
-  addCustomer(data: { name: string; emails: ContactEntity[]; phones: ContactEntity[]; isFavorite?: boolean }): Observable<Customer> {
+  addCustomer(data: { name: string; emails: ContactEntity[]; phones: ContactEntity[]; isFavorite?: boolean; bdate?: string; photoUrl?: string }): Observable<Customer> {
     return this.http.post<Customer>(this.API_URL, data, {
       headers: this.getHeaders(),
     });
   }
 
   // ── Update a customer ──────────────────
-  updateCustomer(id: string, data: { name: string; emails: ContactEntity[]; phones: ContactEntity[]; isFavorite?: boolean }): Observable<Customer> {
+  updateCustomer(id: string, data: { name: string; emails: ContactEntity[]; phones: ContactEntity[]; isFavorite?: boolean; bdate?: string; photoUrl?: string }): Observable<Customer> {
     return this.http.put<Customer>(`${this.API_URL}/${id}`, data, {
       headers: this.getHeaders(),
     });
@@ -74,6 +76,13 @@ export class CustomerService {
   // ── Delete multiple customers ──────────
   deleteCustomers(ids: string[]): Observable<any> {
     return this.http.post(`${this.API_URL}/bulk-delete`, { ids }, {
+      headers: this.getHeaders(),
+    });
+  }
+
+  // ── Bulk import customers ──────────────
+  importCustomers(customers: any[]): Observable<any> {
+    return this.http.post(`${this.API_URL}/bulk`, { customers }, {
       headers: this.getHeaders(),
     });
   }

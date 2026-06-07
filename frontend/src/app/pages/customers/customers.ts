@@ -57,7 +57,8 @@ export class CustomersComponent implements OnInit {
         name: customer.name,
         emails: customer.emails,
         phones: customer.phones,
-        isFavorite: customer.isFavorite
+        isFavorite: customer.isFavorite,
+        bdate: customer.bdate
       })
       .subscribe({
         next: (updated) => {
@@ -75,10 +76,12 @@ export class CustomersComponent implements OnInit {
 
   // ── Add form fields ────────────────────
   newName = '';
+  newBdate = '';
   newEmails: ContactEntity[] = [{ type: 'personal', value: '' }];
   newPhones: ContactEntity[] = [{ type: 'mobile', value: '' }];
   newEmailErrors: string[] = [''];
   newPhoneErrors: string[] = [''];
+  newPhotoUrl = '';
   addLoading = false;
   addError = '';
   addSuccess = '';
@@ -86,10 +89,12 @@ export class CustomersComponent implements OnInit {
   // ── Edit modal fields ──────────────────
   editCustomer: Customer | null = null;
   editName = '';
+  editBdate = '';
   editEmails: ContactEntity[] = [];
   editPhones: ContactEntity[] = [];
   editEmailErrors: string[] = [];
   editPhoneErrors: string[] = [];
+  editPhotoUrl = '';
   editLoading = false;
   editError = '';
 
@@ -99,6 +104,16 @@ export class CustomersComponent implements OnInit {
   // ── Bulk Delete ────────────────────────
   selectedIds: Set<string> = new Set<string>();
   showBulkDeleteModal = false;
+
+  // ── Import Modal ─────────────────────────
+  showImportResultModal = false;
+  importResultTitle = '';
+  importResultMessage = '';
+  importResultIsError = false;
+  importResultImported: string[] = [];
+  importResultDuplicates: string[] = [];
+  importResultMerged: string[] = [];
+  importResultInvalids: string[] = [];
 
   constructor(private customerService: CustomerService) {}
 
@@ -171,6 +186,23 @@ export class CustomersComponent implements OnInit {
       return;
     }
 
+    if (!this.newBdate) {
+      this.addError = 'Birthdate is required.';
+      return;
+    }
+
+    const validNewEmails = this.newEmails.filter(e => e.value.trim());
+    if (validNewEmails.length === 0) {
+      this.addError = 'At least one email address is required.';
+      return;
+    }
+
+    const validNewPhones = this.newPhones.filter(p => p.value.trim());
+    if (validNewPhones.length === 0) {
+      this.addError = 'At least one phone number is required.';
+      return;
+    }
+
     this.validatePhones('new');
     this.validateEmails('new');
 
@@ -185,15 +217,19 @@ export class CustomersComponent implements OnInit {
         name: this.newName.trim(),
         emails: this.newEmails.filter(e => e.value.trim()).map(e => ({ type: e.type, value: e.value.trim() })),
         phones: this.newPhones.filter(p => p.value.trim()).map(p => ({ type: p.type, value: p.value.trim() })),
+        bdate: this.newBdate,
+        photoUrl: this.newPhotoUrl,
       })
       .subscribe({
         next: (customer) => {
           this.customers.unshift(customer); // Add to top of list
           this.newName = '';
+          this.newBdate = '';
           this.newEmails = [{ type: 'personal', value: '' }];
           this.newPhones = [{ type: 'mobile', value: '' }];
           this.newEmailErrors = [''];
           this.newPhoneErrors = [''];
+          this.newPhotoUrl = '';
           this.addLoading = false;
           this.showAddModal = false; // Close modal on success
           this.addSuccess = `"${customer.name}" added successfully!`;
@@ -211,10 +247,12 @@ export class CustomersComponent implements OnInit {
   openEdit(customer: Customer): void {
     this.editCustomer = customer;
     this.editName = customer.name;
+    this.editBdate = customer.bdate || '';
     this.editEmails = customer.emails?.length ? customer.emails.map(e => ({ type: e.type || 'personal', value: e.value })) : [{ type: 'personal', value: '' }];
     this.editPhones = customer.phones?.length ? customer.phones.map(p => ({ type: p.type || 'mobile', value: p.value })) : [{ type: 'mobile', value: '' }];
     this.editEmailErrors = new Array(this.editEmails.length).fill('');
     this.editPhoneErrors = new Array(this.editPhones.length).fill('');
+    this.editPhotoUrl = customer.photoUrl || '';
     this.editError = '';
   }
 
@@ -226,6 +264,23 @@ export class CustomersComponent implements OnInit {
 
     if (!this.editName.trim()) {
       this.editError = 'Customer name is required.';
+      return;
+    }
+
+    if (!this.editBdate) {
+      this.editError = 'Birthdate is required.';
+      return;
+    }
+
+    const validEditEmails = this.editEmails.filter(e => e.value.trim());
+    if (validEditEmails.length === 0) {
+      this.editError = 'At least one email address is required.';
+      return;
+    }
+
+    const validEditPhones = this.editPhones.filter(p => p.value.trim());
+    if (validEditPhones.length === 0) {
+      this.editError = 'At least one phone number is required.';
       return;
     }
 
@@ -243,6 +298,8 @@ export class CustomersComponent implements OnInit {
         name: this.editName.trim(),
         emails: this.editEmails.filter(e => e.value.trim()).map(e => ({ type: e.type, value: e.value.trim() })),
         phones: this.editPhones.filter(p => p.value.trim()).map(p => ({ type: p.type, value: p.value.trim() })),
+        bdate: this.editBdate,
+        photoUrl: this.editPhotoUrl,
       })
       .subscribe({
         next: (updated) => {
@@ -267,6 +324,7 @@ export class CustomersComponent implements OnInit {
   // ── Close edit modal ───────────────────
   closeEdit(): void {
     this.editCustomer = null;
+    this.editPhotoUrl = '';
   }
 
   // ── Open delete confirmation ───────────
@@ -355,6 +413,32 @@ export class CustomersComponent implements OnInit {
     }
   }
 
+  // ── Photo Selection ─────────────────────
+  onPhotoSelected(event: Event, mode: 'new' | 'edit'): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      const file = input.files[0];
+      
+      // Check file size (e.g., limit to 5MB for frontend check)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('File is too large. Please select an image under 5MB.');
+        input.value = '';
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const base64Url = e.target?.result as string;
+        if (mode === 'new') {
+          this.newPhotoUrl = base64Url;
+        } else {
+          this.editPhotoUrl = base64Url;
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
   // ── Bulk Selection Methods ───────────────
   toggleSelection(id: string): void {
     if (this.selectedIds.has(id)) {
@@ -377,19 +461,28 @@ export class CustomersComponent implements OnInit {
     return this.customers.length > 0 && this.selectedIds.size === this.customers.length;
   }
 
+  isBirthdayToday(bdate?: string): boolean {
+    if (!bdate) return false;
+    const today = new Date();
+    const [year, month, day] = bdate.split('-');
+    if (!month || !day) return false;
+    return today.getMonth() + 1 === parseInt(month, 10) && today.getDate() === parseInt(day, 10);
+  }
+
   // ── Bulk Download CSV ────────────────────
   downloadCsv(): void {
     if (this.selectedIds.size === 0) return;
 
     const selectedCustomers = this.customers.filter(c => this.selectedIds.has(c._id));
     
-    const headers = ['Name', 'Emails', 'Phones', 'Favorite'];
+    const headers = ['Name', 'Emails', 'Phones', 'Favorite', 'Birthdate'];
     const rows = selectedCustomers.map(c => {
-      const emails = c.emails ? c.emails.map(e => e.value).join('; ') : '';
-      const phones = c.phones ? c.phones.map(p => p.value).join('; ') : '';
+      const emails = c.emails ? c.emails.map(e => `${e.value} (${e.type || 'personal'})`).join('; ') : '';
+      const phones = c.phones ? c.phones.map(p => `${p.value} (${p.type || 'mobile'})`).join('; ') : '';
       const isFavorite = c.isFavorite ? 'Yes' : 'No';
+      const bdate = c.bdate || '';
       
-      return `"${c.name.replace(/"/g, '""')}","${emails.replace(/"/g, '""')}","${phones.replace(/"/g, '""')}","${isFavorite}"`;
+      return `"${c.name.replace(/"/g, '""')}","${emails.replace(/"/g, '""')}","${phones.replace(/"/g, '""')}","${isFavorite}","${bdate}"`;
     });
     
     const csvContent = [headers.join(','), ...rows].join('\n');
@@ -431,5 +524,150 @@ export class CustomersComponent implements OnInit {
         this.showBulkDeleteModal = false;
       },
     });
+  }
+
+  // ── CSV Bulk Import ──────────────────────
+  onImportFileChange(event: any): void {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e: any) => {
+      const text = e.target.result;
+      if (typeof text !== 'string') return;
+      
+      const lines = text.split(/\r?\n/).filter((line: string) => line.trim());
+      if (lines.length < 2) {
+        this.importResultTitle = 'Invalid File';
+        this.importResultMessage = 'CSV file is empty or missing headers.';
+        this.importResultIsError = true;
+        this.importResultImported = [];
+        this.importResultDuplicates = [];
+        this.importResultInvalids = [];
+        this.showImportResultModal = true;
+        event.target.value = '';
+        return;
+      }
+
+      const customersToImport: any[] = [];
+      
+      // Better CSV split handling quotes
+      const parseCsvLine = (line: string): string[] => {
+        const row: string[] = [];
+        let cur = '';
+        let inQuotes = false;
+        for (const char of line) {
+            if (char === '"') {
+                inQuotes = !inQuotes;
+            } else if (char === ',' && !inQuotes) {
+                row.push(cur.trim());
+                cur = '';
+            } else {
+                cur += char;
+            }
+        }
+        row.push(cur.trim());
+        return row;
+      };
+
+      const headers = parseCsvLine(lines[0]).map(h => h.toLowerCase());
+      
+      const nameIdx = headers.findIndex(h => h.includes('name'));
+      const emailIdx = headers.findIndex(h => h.includes('email'));
+      const phoneIdx = headers.findIndex(h => h.includes('phone'));
+      const bdateIdx = headers.findIndex(h => h.includes('birthdate') || h.includes('bdate'));
+      
+      if (nameIdx === -1) {
+        this.importResultTitle = 'Invalid Format';
+        this.importResultMessage = 'CSV must contain a "Name" column.';
+        this.importResultIsError = true;
+        this.importResultImported = [];
+        this.importResultDuplicates = [];
+        this.importResultInvalids = [];
+        this.showImportResultModal = true;
+        event.target.value = '';
+        return;
+      }
+
+      for (let i = 1; i < lines.length; i++) {
+        const row = parseCsvLine(lines[i]);
+        if (!row[nameIdx]) continue;
+        
+        const emails: any[] = [];
+        if (emailIdx !== -1 && row[emailIdx]) {
+           const emailParts = row[emailIdx].split(/[;,]/);
+           emailParts.forEach(part => {
+             const m = part.trim().match(/^(.*?)(?:\s*\((.*?)\))?$/);
+             if (m && m[1]) {
+                emails.push({ value: m[1].trim(), type: m[2] ? m[2].trim() : 'personal' });
+             }
+           });
+        }
+        
+        const phones: any[] = [];
+        if (phoneIdx !== -1 && row[phoneIdx]) {
+           const phoneParts = row[phoneIdx].split(/[;,]/);
+           phoneParts.forEach(part => {
+             const m = part.trim().match(/^(.*?)(?:\s*\((.*?)\))?$/);
+             if (m && m[1]) {
+                phones.push({ value: m[1].trim(), type: m[2] ? m[2].trim() : 'mobile' });
+             }
+           });
+        }
+        
+        customersToImport.push({
+          name: row[nameIdx],
+          email: emails.length > 0 ? emails[0].value : '',
+          phone: phones.length > 0 ? phones[0].value : '',
+          emails: emails,
+          phones: phones,
+          bdate: bdateIdx !== -1 ? row[bdateIdx] : ''
+        });
+      }
+
+      if (customersToImport.length === 0) {
+        this.importResultTitle = 'No Contacts';
+        this.importResultMessage = 'No valid contacts found to import.';
+        this.importResultIsError = true;
+        this.importResultImported = [];
+        this.importResultDuplicates = [];
+        this.importResultMerged = [];
+        this.importResultInvalids = [];
+        this.showImportResultModal = true;
+        event.target.value = '';
+        return;
+      }
+      
+      this.loading = true;
+      this.customerService.importCustomers(customersToImport).subscribe({
+        next: (res) => {
+          this.importResultTitle = 'Import Completed';
+          this.importResultMessage = res.message;
+          this.importResultIsError = false;
+          this.importResultImported = res.imported || [];
+          this.importResultDuplicates = res.skippedDuplicates || [];
+          this.importResultMerged = res.merged || [];
+          this.importResultInvalids = res.skippedInvalid || [];
+          this.showImportResultModal = true;
+          this.loadCustomers();
+        },
+        error: (err) => {
+          this.loading = false;
+          this.importResultTitle = 'Import Failed';
+          this.importResultMessage = err.error?.message || 'Failed to import CSV.';
+          this.importResultIsError = true;
+          this.importResultImported = err.error?.imported || [];
+          this.importResultDuplicates = err.error?.skippedDuplicates || [];
+          this.importResultMerged = err.error?.merged || [];
+          this.importResultInvalids = err.error?.skippedInvalid || [];
+          this.showImportResultModal = true;
+        }
+      });
+      
+      // Reset file input
+      event.target.value = '';
+    };
+    
+    reader.readAsText(file);
   }
 }

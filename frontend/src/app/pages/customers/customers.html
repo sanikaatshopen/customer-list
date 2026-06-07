@@ -14,6 +14,10 @@
           <i class="bi bi-trash3 me-1 me-md-2"></i><span class="d-none d-sm-inline">Delete Selected</span> ({{ selectedIds.size }})
         </button>
       }
+      <button class="btn btn-outline-info rounded-pill px-3 px-md-4 py-1 py-md-2 fw-semibold shadow-sm" (click)="fileInput.click()" title="Import CSV">
+        <i class="bi bi-upload me-1 me-md-2"></i><span class="d-none d-sm-inline">Import</span>
+      </button>
+      <input type="file" #fileInput accept=".csv" (change)="onImportFileChange($event)" style="display: none;">
       <button class="btn btn-primary rounded-pill px-3 px-md-4 py-1 py-md-2 fw-semibold shadow-sm" (click)="showAddModal = true">
         <i class="bi bi-plus-lg me-1 me-md-2 d-none d-sm-inline-block"></i><i class="bi bi-plus-lg d-inline-block d-sm-none"></i> <span class="d-none d-sm-inline">Add Customer</span><span class="d-inline d-sm-none">Add</span>
       </button>
@@ -92,7 +96,8 @@
                     <th class="ps-4" style="width: 40px;">
                       <input class="form-check-input" type="checkbox" [checked]="isAllSelected()" (change)="toggleAll($event)">
                     </th>
-                    <th class="text-muted">#</th>
+                    <th class="text-muted" style="width: 50px;">#</th>
+                    <th class="text-center text-muted" style="width: 60px;">Photo</th>
                     <th class="text-muted">Name</th>
                     <th class="text-muted">Email</th>
                     <th class="text-muted">Phone</th>
@@ -101,13 +106,27 @@
                 </thead>
                 <tbody>
                   @for (customer of list; track customer._id; let i = $index) {
-                  <tr [class.table-primary]="selectedIds.has(customer._id)">
+                  <tr [class.table-primary]="selectedIds.has(customer._id)" [class.birthday-row]="!selectedIds.has(customer._id) && isBirthdayToday(customer.bdate)">
                     <td class="ps-4">
                       <input class="form-check-input" type="checkbox" [checked]="selectedIds.has(customer._id)" (change)="toggleSelection(customer._id)">
                     </td>
                     <td class="text-muted">{{ i + 1 }}</td>
+                    <td class="text-center">
+                      @if (customer.photoUrl) {
+                        <img [src]="customer.photoUrl" class="rounded-circle object-fit-cover shadow-sm border border-2 border-white" style="width: 40px; height: 40px;" alt="Photo">
+                      } @else {
+                        <div class="rounded-circle bg-light text-secondary d-inline-flex align-items-center justify-content-center shadow-sm border border-2 border-white" style="width: 40px; height: 40px;">
+                          <i class="bi bi-person-fill fs-5"></i>
+                        </div>
+                      }
+                    </td>
                     <td class="fw-bold text-dark">
                       {{ customer.name }}
+                      @if (isBirthdayToday(customer.bdate)) {
+                        <span class="badge rounded-pill birthday-badge ms-2 py-1 px-2">
+                          <span style="font-size: 1.1em;">🎂</span> Birthday
+                        </span>
+                      }
                     </td>
                     <td>
                       @if (customer.emails && customer.emails.length > 0) {
@@ -161,13 +180,25 @@
               <div class="row gx-0">
                 @for (customer of list; track customer._id; let i = $index) {
                 <div class="col-12 mb-3">
-                  <div class="card card-hover border-0 shadow-sm" style="border-left: 4px solid var(--bs-primary) !important;">
+                  <div class="card card-hover shadow-sm" [class.border-0]="!isBirthdayToday(customer.bdate)" [class.birthday-card]="isBirthdayToday(customer.bdate)" [style.border-left]="!isBirthdayToday(customer.bdate) ? '4px solid var(--bs-primary)' : ''">
                     <div class="card-body">
                       <div class="d-flex justify-content-between align-items-center mb-2">
                         <div class="d-flex align-items-center gap-2">
                           <input class="form-check-input mt-0" type="checkbox" [checked]="selectedIds.has(customer._id)" (change)="toggleSelection(customer._id)">
-                          <h5 class="card-title mb-0 fw-bold text-dark">
+                          @if (customer.photoUrl) {
+                            <img [src]="customer.photoUrl" class="rounded-circle object-fit-cover shadow-sm border border-2 border-white ms-1" style="width: 36px; height: 36px;" alt="Photo">
+                          } @else {
+                            <div class="rounded-circle bg-light text-secondary d-inline-flex align-items-center justify-content-center shadow-sm border border-2 border-white ms-1" style="width: 36px; height: 36px;">
+                              <i class="bi bi-person-fill fs-6"></i>
+                            </div>
+                          }
+                          <h5 class="card-title mb-0 fw-bold text-dark d-flex align-items-center flex-wrap gap-2 ms-1">
                             {{ customer.name }}
+                            @if (isBirthdayToday(customer.bdate)) {
+                              <span class="badge rounded-pill birthday-badge py-1 px-2">
+                                <span style="font-size: 1.1em;">🎂</span> Birthday
+                              </span>
+                            }
                           </h5>
                         </div>
                         <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2 py-1">#{{ i + 1 }}</span>
@@ -258,7 +289,26 @@
             </div>
             
             <div class="mb-2 mb-md-3">
-              <label class="form-label fw-semibold">Email(s)</label>
+              <label for="newPhoto" class="form-label fw-semibold">Photograph (Optional)</label>
+              <div class="d-flex align-items-center gap-3">
+                @if (newPhotoUrl) {
+                  <img [src]="newPhotoUrl" class="rounded-circle object-fit-cover shadow-sm border border-2 border-white" style="width: 60px; height: 60px;" alt="Preview">
+                } @else {
+                  <div class="rounded-circle bg-light text-secondary d-flex align-items-center justify-content-center shadow-sm border border-2 border-white" style="width: 60px; height: 60px;">
+                    <i class="bi bi-person fs-3"></i>
+                  </div>
+                }
+                <input type="file" class="form-control bg-light border-0 py-1 py-md-2" id="newPhoto" accept="image/*" (change)="onPhotoSelected($event, 'new')" />
+              </div>
+            </div>
+            
+            <div class="mb-2 mb-md-3">
+              <label for="newBdate" class="form-label fw-semibold">Birthdate *</label>
+              <input type="date" class="form-control bg-light border-0 py-1 py-md-2" id="newBdate" [(ngModel)]="newBdate" name="newBdate" required />
+            </div>
+            
+            <div class="mb-2 mb-md-3">
+              <label class="form-label fw-semibold">Email(s) *</label>
               @for (email of newEmails; track $index; let i = $index) {
                 <div class="d-flex mb-2">
                   <select class="form-select bg-light border-0 me-2 py-1 py-md-2" style="width: auto;" [(ngModel)]="newEmails[i].type" name="newEmailType_{{i}}">
@@ -282,7 +332,7 @@
             </div>
             
             <div class="mb-3 mb-md-4">
-              <label class="form-label fw-semibold">Phone(s) (10 digits)</label>
+              <label class="form-label fw-semibold">Phone(s) (10 digits) *</label>
               @for (phone of newPhones; track $index; let i = $index) {
                 <div class="d-flex mb-2">
                   <select class="form-select bg-light border-0 me-2 py-1 py-md-2" style="width: auto;" [(ngModel)]="newPhones[i].type" name="newPhoneType_{{i}}">
@@ -340,7 +390,26 @@
           </div>
           
           <div class="mb-2 mb-md-3">
-            <label class="form-label fw-semibold">Email(s)</label>
+            <label for="editPhoto" class="form-label fw-semibold">Photograph (Optional)</label>
+            <div class="d-flex align-items-center gap-3">
+              @if (editPhotoUrl) {
+                <img [src]="editPhotoUrl" class="rounded-circle object-fit-cover shadow-sm border border-2 border-white" style="width: 60px; height: 60px;" alt="Preview">
+              } @else {
+                <div class="rounded-circle bg-light text-secondary d-flex align-items-center justify-content-center shadow-sm border border-2 border-white" style="width: 60px; height: 60px;">
+                  <i class="bi bi-person fs-3"></i>
+                </div>
+              }
+              <input type="file" class="form-control bg-light border-0 py-1 py-md-2" id="editPhoto" accept="image/*" (change)="onPhotoSelected($event, 'edit')" />
+            </div>
+          </div>
+          
+          <div class="mb-2 mb-md-3">
+            <label for="editBdate" class="form-label fw-semibold">Birthdate *</label>
+            <input type="date" class="form-control bg-light border-0 py-1 py-md-2" id="editBdate" [(ngModel)]="editBdate" name="editBdate" required />
+          </div>
+          
+          <div class="mb-2 mb-md-3">
+            <label class="form-label fw-semibold">Email(s) *</label>
             @for (email of editEmails; track $index; let i = $index) {
               <div class="d-flex mb-2">
                 <select class="form-select bg-light border-0 me-2 py-1 py-md-2" style="width: auto;" [(ngModel)]="editEmails[i].type" name="editEmailType_{{i}}">
@@ -364,7 +433,7 @@
           </div>
           
           <div class="mb-3 mb-md-4">
-            <label class="form-label fw-semibold">Phone(s) (10 digits)</label>
+            <label class="form-label fw-semibold">Phone(s) (10 digits) *</label>
             @for (phone of editPhones; track $index; let i = $index) {
               <div class="d-flex mb-2">
                 <select class="form-select bg-light border-0 me-2 py-1 py-md-2" style="width: auto;" [(ngModel)]="editPhones[i].type" name="editPhoneType_{{i}}">
@@ -447,6 +516,71 @@
         <div class="modal-footer border-top-0 d-flex justify-content-center pb-4">
           <button class="btn btn-light rounded-pill px-4 fw-semibold" (click)="cancelBulkDelete()">Cancel</button>
           <button class="btn btn-danger rounded-pill px-4 fw-bold" (click)="confirmBulkDelete()">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ════════════════════════════════════════════ -->
+<!--  IMPORT RESULT MODAL                         -->
+<!-- ════════════════════════════════════════════ -->
+@if (showImportResultModal) {
+  <div class="modal-backdrop show" (click)="showImportResultModal = false"></div>
+  <div class="modal d-block" tabindex="-1" (click)="showImportResultModal = false">
+    <div class="modal-dialog modal-dialog-centered" (click)="$event.stopPropagation()">
+      <div class="modal-content border-0 shadow-lg">
+        <div class="modal-header border-bottom-0">
+          <h5 class="modal-title fw-bold" [class.text-danger]="importResultIsError" [class.text-success]="!importResultIsError">
+            <i class="bi" [class.bi-exclamation-triangle-fill]="importResultIsError" [class.bi-check-circle-fill]="!importResultIsError" class="me-2"></i>
+            {{ importResultTitle }}
+          </h5>
+          <button type="button" class="btn-close" (click)="showImportResultModal = false"></button>
+        </div>
+        <div class="modal-body p-4 text-start">
+          <div class="text-center mb-3">
+            <i class="bi" [class.bi-exclamation-circle]="importResultIsError" [class.bi-info-circle]="!importResultIsError" [class.text-danger]="importResultIsError" [class.text-primary]="!importResultIsError" style="font-size: 3rem;"></i>
+            <p class="mb-0 fs-5 text-dark fw-semibold mt-2">{{ importResultMessage }}</p>
+          </div>
+          
+          @if (importResultImported.length > 0) {
+            <div class="mb-3">
+              <h6 class="text-success fw-bold"><i class="bi bi-check-circle me-1"></i> Successfully Imported ({{importResultImported.length}})</h6>
+              <div class="small text-muted bg-light p-2 rounded border" style="max-height: 100px; overflow-y: auto;">
+                {{ importResultImported.join(', ') }}
+              </div>
+            </div>
+          }
+
+          @if (importResultMerged.length > 0) {
+            <div class="mb-3">
+              <h6 class="text-info fw-bold"><i class="bi bi-arrow-repeat me-1"></i> Merged & Updated ({{importResultMerged.length}})</h6>
+              <div class="small text-muted bg-light p-2 rounded border" style="max-height: 100px; overflow-y: auto;">
+                {{ importResultMerged.join(', ') }}
+              </div>
+            </div>
+          }
+
+          @if (importResultDuplicates.length > 0) {
+            <div class="mb-3">
+              <h6 class="text-warning fw-bold"><i class="bi bi-exclamation-triangle me-1"></i> Skipped: Conflicts / Duplicates ({{importResultDuplicates.length}})</h6>
+              <div class="small text-muted bg-light p-2 rounded border" style="max-height: 100px; overflow-y: auto;">
+                {{ importResultDuplicates.join(', ') }}
+              </div>
+            </div>
+          }
+
+          @if (importResultInvalids.length > 0) {
+            <div class="mb-3">
+              <h6 class="text-danger fw-bold"><i class="bi bi-x-circle me-1"></i> Skipped: Invalid Data ({{importResultInvalids.length}})</h6>
+              <div class="small text-muted bg-light p-2 rounded border" style="max-height: 100px; overflow-y: auto;">
+                {{ importResultInvalids.join(', ') }}
+              </div>
+            </div>
+          }
+        </div>
+        <div class="modal-footer border-top-0 d-flex justify-content-center pb-4">
+          <button class="btn rounded-pill px-5 fw-bold" [class.btn-danger]="importResultIsError" [class.btn-primary]="!importResultIsError" (click)="showImportResultModal = false">Close</button>
         </div>
       </div>
     </div>

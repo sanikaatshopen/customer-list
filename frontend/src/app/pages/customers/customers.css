@@ -4,3 +4,29 @@
 .modal-backdrop.show {
   opacity: 0.5;
 }
+
+/* Birthday Highlight Styles */
+.birthday-row {
+  background: linear-gradient(to right, rgba(255, 117, 140, 0.08), rgba(255, 126, 179, 0.05)) !important;
+}
+.birthday-row td {
+  background: transparent !important;
+}
+
+.birthday-card {
+  background: linear-gradient(135deg, rgba(255, 117, 140, 0.08), rgba(255, 126, 179, 0.05)) !important;
+  border: 1px solid rgba(255, 117, 140, 0.3) !important;
+  border-left: 4px solid #ff758c !important;
+}
+
+.birthday-badge {
+  background: linear-gradient(45deg, #ff758c 0%, #ff7eb3 100%);
+  color: white;
+  font-weight: 600;
+  font-size: 0.75rem;
+  box-shadow: 0 2px 5px rgba(255, 117, 140, 0.4);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  letter-spacing: 0.3px;
+}

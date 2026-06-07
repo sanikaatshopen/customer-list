@@ -303,8 +303,8 @@
             </div>
             
             <div class="mb-2 mb-md-3">
-              <label for="newBdate" class="form-label fw-semibold">Birthdate</label>
-              <input type="date" class="form-control bg-light border-0 py-1 py-md-2" id="newBdate" [(ngModel)]="newBdate" name="newBdate" />
+              <label for="newBdate" class="form-label fw-semibold">Birthdate *</label>
+              <input type="date" class="form-control bg-light border-0 py-1 py-md-2" id="newBdate" [(ngModel)]="newBdate" name="newBdate" required />
             </div>
             
             <div class="mb-2 mb-md-3">
@@ -404,8 +404,8 @@
           </div>
           
           <div class="mb-2 mb-md-3">
-            <label for="editBdate" class="form-label fw-semibold">Birthdate</label>
-            <input type="date" class="form-control bg-light border-0 py-1 py-md-2" id="editBdate" [(ngModel)]="editBdate" name="editBdate" />
+            <label for="editBdate" class="form-label fw-semibold">Birthdate *</label>
+            <input type="date" class="form-control bg-light border-0 py-1 py-md-2" id="editBdate" [(ngModel)]="editBdate" name="editBdate" required />
           </div>
           
           <div class="mb-2 mb-md-3">
@@ -552,9 +552,18 @@
             </div>
           }
 
+          @if (importResultMerged.length > 0) {
+            <div class="mb-3">
+              <h6 class="text-info fw-bold"><i class="bi bi-arrow-repeat me-1"></i> Merged & Updated ({{importResultMerged.length}})</h6>
+              <div class="small text-muted bg-light p-2 rounded border" style="max-height: 100px; overflow-y: auto;">
+                {{ importResultMerged.join(', ') }}
+              </div>
+            </div>
+          }
+
           @if (importResultDuplicates.length > 0) {
             <div class="mb-3">
-              <h6 class="text-warning fw-bold"><i class="bi bi-exclamation-triangle me-1"></i> Skipped: Already Exists ({{importResultDuplicates.length}})</h6>
+              <h6 class="text-warning fw-bold"><i class="bi bi-exclamation-triangle me-1"></i> Skipped: Conflicts / Duplicates ({{importResultDuplicates.length}})</h6>
               <div class="small text-muted bg-light p-2 rounded border" style="max-height: 100px; overflow-y: auto;">
                 {{ importResultDuplicates.join(', ') }}
               </div>

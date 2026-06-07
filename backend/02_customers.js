@@ -159,6 +159,10 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ message: 'Customer name is required.' });
     }
 
+    if (!bdate) {
+      return res.status(400).json({ message: 'Birthdate is required.' });
+    }
+
     if (!emails || !Array.isArray(emails) || emails.filter(e => e.value && e.value.trim() !== '').length === 0) {
       return res.status(400).json({ message: 'At least one email address is required.' });
     }
@@ -238,10 +242,10 @@ router.post('/bulk', async (req, res) => {
     const skippedInvalidNames = [];
 
     for (const c of customers) {
-      const { name, email, phone, bdate, isFavorite } = c;
-      if (!name) {
+      const { name, email, phone, bdate, isFavorite, emails: incomingEmailObjs, phones: incomingPhoneObjs } = c;
+      if (!name || !bdate) {
         skippedInvalid++;
-        skippedInvalidNames.push('Unknown');
+        skippedInvalidNames.push(name ? name.toString().trim() : 'Unknown');
         continue;
       }
 
@@ -250,28 +254,63 @@ router.post('/bulk', async (req, res) => {
       let primaryEmail = '';
       let primaryPhone = '';
       
-      let cleanEmail = email ? email.toString().trim() : '';
       let isEmailInvalid = false;
-      if (cleanEmail) {
-        if (/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(cleanEmail)) {
-          emails.push({ type: 'personal', value: cleanEmail });
-          primaryEmail = cleanEmail;
-          incomingEmails.push(cleanEmail);
-        } else {
-          isEmailInvalid = true;
+      let isPhoneInvalid = false;
+
+      // Handle emails array if present
+      if (incomingEmailObjs && Array.isArray(incomingEmailObjs) && incomingEmailObjs.length > 0) {
+        for (const e of incomingEmailObjs) {
+          let cleanVal = e.value ? e.value.toString().trim() : '';
+          if (cleanVal) {
+            if (/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(cleanVal)) {
+               emails.push({ type: e.type || 'personal', value: cleanVal });
+               if (!primaryEmail) primaryEmail = cleanVal;
+               incomingEmails.push(cleanVal);
+            } else {
+               isEmailInvalid = true;
+            }
+          }
+        }
+      } else {
+        // Fallback to legacy single email
+        let cleanEmail = email ? email.toString().trim() : '';
+        if (cleanEmail) {
+          if (/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(cleanEmail)) {
+            emails.push({ type: 'personal', value: cleanEmail });
+            primaryEmail = cleanEmail;
+            incomingEmails.push(cleanEmail);
+          } else {
+            isEmailInvalid = true;
+          }
         }
       }
 
-      let cleanPhone = phone ? phone.toString().trim() : '';
-      let isPhoneInvalid = false;
-      if (cleanPhone) {
-        const digitsOnly = cleanPhone.replace(/\D/g, ''); // Extract only digits for validation
-        if (/^\d{10}$/.test(digitsOnly)) {
-          phones.push({ type: 'mobile', value: digitsOnly });
-          primaryPhone = digitsOnly;
-          incomingPhones.push(digitsOnly);
-        } else {
-          isPhoneInvalid = true;
+      // Handle phones array if present
+      if (incomingPhoneObjs && Array.isArray(incomingPhoneObjs) && incomingPhoneObjs.length > 0) {
+        for (const p of incomingPhoneObjs) {
+          let cleanVal = p.value ? p.value.toString().trim() : '';
+          if (cleanVal) {
+            const digitsOnly = cleanVal.replace(/\D/g, '');
+            if (/^\d{10}$/.test(digitsOnly)) {
+               phones.push({ type: p.type || 'mobile', value: digitsOnly });
+               if (!primaryPhone) primaryPhone = digitsOnly;
+               incomingPhones.push(digitsOnly);
+            } else {
+               isPhoneInvalid = true;
+            }
+          }
+        }
+      } else {
+        let cleanPhone = phone ? phone.toString().trim() : '';
+        if (cleanPhone) {
+          const digitsOnly = cleanPhone.replace(/\D/g, ''); // Extract only digits for validation
+          if (/^\d{10}$/.test(digitsOnly)) {
+            phones.push({ type: 'mobile', value: digitsOnly });
+            primaryPhone = digitsOnly;
+            incomingPhones.push(digitsOnly);
+          } else {
+            isPhoneInvalid = true;
+          }
         }
       }
 
@@ -294,67 +333,119 @@ router.post('/bulk', async (req, res) => {
     }
 
     // Query the database for existing duplicates
-    const existingEmails = new Set();
-    const existingPhones = new Set();
-    
+    let existingCustomers = [];
     const query = [];
     if (incomingEmails.length > 0) {
       query.push({ email: { $in: incomingEmails } });
+      query.push({ 'emails.value': { $in: incomingEmails } });
     }
     if (incomingPhones.length > 0) {
       query.push({ phone: { $in: incomingPhones } });
+      query.push({ 'phones.value': { $in: incomingPhones } });
     }
 
     if (query.length > 0) {
-      const existingCustomers = await Customer.find({
+      existingCustomers = await Customer.find({
         createdBy: req.userId,
         $or: query
-      }).select('email phone');
-
-      for (const ex of existingCustomers) {
-        if (ex.email) existingEmails.add(ex.email);
-        if (ex.phone) existingPhones.add(ex.phone);
-      }
+      });
     }
 
     const validCustomers = [];
     let skippedDuplicates = 0;
     const skippedDuplicateNames = [];
+    let mergedCount = 0;
+    const mergedNames = [];
+
     const batchEmails = new Set();
     const batchPhones = new Set();
 
     for (const c of parsedCustomers) {
-      let isDuplicate = false;
+      let matchingExisting = null;
       
-      if (c.email) {
-        if (existingEmails.has(c.email) || batchEmails.has(c.email)) {
-          isDuplicate = true;
-        } else {
-          batchEmails.add(c.email);
-        }
-      }
+      const allMyEmails = c.emails.map(e => e.value);
+      const allMyPhones = c.phones.map(p => p.value);
       
-      if (c.phone && !isDuplicate) {
-        if (existingPhones.has(c.phone) || batchPhones.has(c.phone)) {
-          isDuplicate = true;
-        } else {
-          batchPhones.add(c.phone);
-        }
+      const matchedRecords = existingCustomers.filter(ex => {
+         const exEmails = (ex.emails || []).map(e => e.value).concat(ex.email ? [ex.email] : []);
+         const exPhones = (ex.phones || []).map(p => p.value).concat(ex.phone ? [ex.phone] : []);
+         const hasEmailMatch = allMyEmails.some(e => exEmails.includes(e));
+         const hasPhoneMatch = allMyPhones.some(p => exPhones.includes(p));
+         return hasEmailMatch || hasPhoneMatch;
+      });
+
+      if (matchedRecords.length === 1) {
+         matchingExisting = matchedRecords[0];
+      } else if (matchedRecords.length > 1) {
+         skippedDuplicates++;
+         skippedDuplicateNames.push(c.name);
+         continue;
       }
 
-      if (isDuplicate) {
+      if (matchingExisting) {
+         let updated = false;
+         
+         if (matchingExisting.name !== c.name) {
+           matchingExisting.name = c.name;
+           updated = true;
+         }
+         
+         for (const e of c.emails) {
+           const exists = matchingExisting.emails.some(ex => ex.value === e.value);
+           if (!exists) {
+             matchingExisting.emails.push(e);
+             updated = true;
+           }
+         }
+         
+         for (const p of c.phones) {
+           const exists = matchingExisting.phones.some(ex => ex.value === p.value);
+           if (!exists) {
+             matchingExisting.phones.push(p);
+             updated = true;
+           }
+         }
+         
+         if (matchingExisting.emails.length > 0) matchingExisting.email = matchingExisting.emails[0].value;
+         if (matchingExisting.phones.length > 0) matchingExisting.phone = matchingExisting.phones[0].value;
+
+         if (updated) {
+            await matchingExisting.save();
+         }
+         mergedCount++;
+         mergedNames.push(c.name);
+         continue;
+      }
+
+      let isBatchDuplicate = false;
+      for (const e of c.emails) {
+        if (batchEmails.has(e.value)) isBatchDuplicate = true;
+      }
+      for (const p of c.phones) {
+        if (batchPhones.has(p.value)) isBatchDuplicate = true;
+      }
+
+      if (isBatchDuplicate) {
         skippedDuplicates++;
         skippedDuplicateNames.push(c.name);
       } else {
+        c.emails.forEach(e => batchEmails.add(e.value));
+        c.phones.forEach(p => batchPhones.add(p.value));
         validCustomers.push(c);
       }
     }
 
-    if (validCustomers.length === 0) {
+    let inserted = [];
+    if (validCustomers.length > 0) {
+      inserted = await Customer.insertMany(validCustomers);
+    }
+    
+    if (inserted.length === 0 && mergedCount === 0) {
       if (skippedDuplicates > 0) {
         return res.status(400).json({ 
-          message: `No new customers were imported. Some records already exist.`,
+          message: `No new customers were imported. Some records had conflicts or duplicates.`,
           imported: [],
+          merged: [],
           skippedDuplicates: skippedDuplicateNames,
           skippedInvalid: skippedInvalidNames
         });
@@ -362,19 +453,24 @@ router.post('/bulk', async (req, res) => {
       return res.status(400).json({ 
         message: `No valid new customers found.`,
         imported: [],
+        merged: [],
         skippedDuplicates: skippedDuplicateNames,
         skippedInvalid: skippedInvalidNames
       });
     }
 
-    const inserted = await Customer.insertMany(validCustomers);
     const importedNames = inserted.map(c => c.name);
     
-    let message = `Successfully imported ${inserted.length} customers.`;
+    let message = `Successfully imported ${inserted.length} new customers`;
+    if (mergedCount > 0) {
+       message += ` and updated ${mergedCount} existing customers`;
+    }
+    message += `.`;
     
     res.status(201).json({ 
       message,
       imported: importedNames,
+      merged: mergedNames,
       skippedDuplicates: skippedDuplicateNames,
       skippedInvalid: skippedInvalidNames
     });
@@ -424,6 +520,10 @@ router.put('/:id', async (req, res) => {
 
     if (!name) {
       return res.status(400).json({ message: 'Customer name is required.' });
+    }
+
+    if (!bdate) {
+      return res.status(400).json({ message: 'Birthdate is required.' });
     }
 
     if (!emails || !Array.isArray(emails) || emails.filter(e => e.value && e.value.trim() !== '').length === 0) {

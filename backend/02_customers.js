@@ -187,8 +187,11 @@ router.post('/', async (req, res) => {
       }
     }
 
-    const primaryEmail = emails && emails.length > 0 ? emails[0].value.trim() : '';
-    const primaryPhone = phones && phones.length > 0 ? phones[0].value.trim() : '';
+    const firstEmail = emails && Array.isArray(emails) ? emails.find(e => e && e.value && String(e.value).trim()) : null;
+    const primaryEmail = firstEmail ? String(firstEmail.value).trim() : '';
+
+    const firstPhone = phones && Array.isArray(phones) ? phones.find(p => p && p.value && String(p.value).trim()) : null;
+    const primaryPhone = firstPhone ? String(firstPhone.value).trim() : '';
 
     if (primaryEmail) {
       const existingEmail = await Customer.findOne({ email: primaryEmail, createdBy: req.userId });
@@ -564,8 +567,11 @@ router.put('/:id', async (req, res) => {
       }
     }
 
-    const primaryEmail = emails && emails.length > 0 ? emails[0].value.trim() : '';
-    const primaryPhone = phones && phones.length > 0 ? phones[0].value.trim() : '';
+    const firstEmail = emails && Array.isArray(emails) ? emails.find(e => e && e.value && String(e.value).trim()) : null;
+    const primaryEmail = firstEmail ? String(firstEmail.value).trim() : '';
+
+    const firstPhone = phones && Array.isArray(phones) ? phones.find(p => p && p.value && String(p.value).trim()) : null;
+    const primaryPhone = firstPhone ? String(firstPhone.value).trim() : '';
 
     if (primaryEmail) {
       const existingEmail = await Customer.findOne({ email: primaryEmail, createdBy: req.userId, _id: { $ne: req.params.id } });

@@ -18,6 +18,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const { authMiddleware } = require('./01_auth');
+const { uploadBase64ImageToR2 } = require('./s3_client');
 
 const router = express.Router();
 
@@ -204,6 +205,16 @@ router.post('/', async (req, res) => {
       }
     }
 
+    let finalPhotoUrl = photoUrl || '';
+    if (finalPhotoUrl && finalPhotoUrl.startsWith('data:image/')) {
+      try {
+        finalPhotoUrl = await uploadBase64ImageToR2(finalPhotoUrl, req.userId);
+      } catch (err) {
+        console.error('Error uploading photo to R2:', err);
+        return res.status(500).json({ message: 'Failed to upload photo.' });
+      }
+    }
+
     const customer = new Customer({
       name,
       email: primaryEmail,
@@ -212,7 +223,7 @@ router.post('/', async (req, res) => {
       phones: phones || [],
       isFavorite: isFavorite || false,
       bdate: bdate || '',
-      photoUrl: photoUrl || '',
+      photoUrl: finalPhotoUrl,
       createdBy: req.userId,
     });
 
@@ -567,19 +578,34 @@ router.put('/:id', async (req, res) => {
       }
     }
 
+    let finalPhotoUrl = photoUrl;
+    if (finalPhotoUrl && finalPhotoUrl.startsWith('data:image/')) {
+      try {
+        finalPhotoUrl = await uploadBase64ImageToR2(finalPhotoUrl, req.userId);
+      } catch (err) {
+        console.error('Error uploading photo to R2:', err);
+        return res.status(500).json({ message: 'Failed to upload photo.' });
+      }
+    }
+
+    const updateFields = { 
+      name, 
+      email: primaryEmail, 
+      phone: primaryPhone, 
+      emails: emails || [], 
+      phones: phones || [],
+      ...(isFavorite !== undefined && { isFavorite }),
+      bdate: bdate || '',
+    };
+
+    if (finalPhotoUrl !== undefined) {
+      updateFields.photoUrl = finalPhotoUrl;
+    }
+
     // Find the customer AND check ownership in one query
     const customer = await Customer.findOneAndUpdate(
       { _id: req.params.id, createdBy: req.userId },
-      { 
-        name, 
-        email: primaryEmail, 
-        phone: primaryPhone, 
-        emails: emails || [], 
-        phones: phones || [],
-        ...(isFavorite !== undefined && { isFavorite }),
-        bdate: bdate || '',
-        ...(photoUrl !== undefined && { photoUrl })
-      },
+      updateFields,
       { new: true } // Return the updated document
     );
 
